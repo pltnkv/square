@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js'
-import {FIELD_SIZE, TILE_SIZE} from 'consts'
+import {DEBUG_SIZES, FIELD_SIZE, TILE_SIZE} from 'consts'
 import IState from 'logic/IState'
-import BaseVisual from 'objects/BaseVisual'
+import BaseVisual from 'visuals/BaseVisual'
 
 export default class GameFieldLayer extends BaseVisual {
 
@@ -12,6 +12,19 @@ export default class GameFieldLayer extends BaseVisual {
 		super()
 		this.state = state
 		this.view = new PIXI.Graphics()
+
+		const texture = PIXI.Texture.from('assets/bg_tile.png')
+
+		//create field
+		for (let i = 0; i < FIELD_SIZE; i++) {
+			for (let j = 0; j < FIELD_SIZE; j++) {
+				const tile = new PIXI.Sprite(texture)
+				tile.alpha = 0.5
+				tile.x = i * TILE_SIZE
+				tile.y = j * TILE_SIZE
+				this.view.addChild(tile)
+			}
+		}
 	}
 
 	getView() {

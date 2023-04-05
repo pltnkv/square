@@ -2,17 +2,21 @@ import * as PIXI from 'pixi.js'
 
 export default class Scene {
 
-	stage:PIXI.Container
-	mainLayer: PIXI.Container
+	stage: PIXI.Container
+	objectsLayer: PIXI.Container
+	effectsLayer: PIXI.Container
 
 	constructor(app: PIXI.Application) {
 
 		this.stage = app.stage
 
-		const container = new PIXI.Container()
-		this.mainLayer = container
-		this.mainLayer.y = 40
-		app.stage.addChild(container)
+		this.objectsLayer = new PIXI.Container()
+		this.objectsLayer.y = 40
+		app.stage.addChild(this.objectsLayer)
+
+		this.effectsLayer =  new PIXI.Container()
+		this.effectsLayer.y = 40
+		app.stage.addChild(this.effectsLayer)
 
 		// container.x = app.screen.width / 2
 		// container.y = app.screen.height / 2

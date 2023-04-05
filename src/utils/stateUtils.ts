@@ -1,6 +1,8 @@
 import Direction from 'logic/Direction'
-import IState, {IMovableObject, IPlayer, IPoint} from 'logic/IState'
+import IState, {IBoundingBox, IPoint, ISize} from 'logic/IState'
 import {TILE_SIZE} from "../consts";
+import {GameObject} from "../logic/GameObject";
+import {PlayerComponentKey} from "../components/PlayerComponent";
 
 ////////////////////////////////////////////
 // There is no function that change state
@@ -37,10 +39,18 @@ export function getRandomDirection(): Direction {
 	return directions[Math.floor(Math.random() * directions.length)]
 }
 
-export function getPlayer(state: IState, playerId: number): IPlayer {
-	return state.players.find(p => p.id === playerId)!
+export function getPlayer(state: IState, playerId: number): GameObject {
+	return state.players.find(p => {
+		const playerComp = p.require(PlayerComponentKey)
+		return playerComp.state.id === playerId
+	})!
 }
 
-export function cellToCoord(i: number): number {
-	return i * TILE_SIZE + TILE_SIZE / 2
+export function posAndSizeToBoundingBox(pos:IPoint, size:ISize):IBoundingBox {
+	return {
+		left: pos.x - size.width / 2,
+		right: pos.x + size.width / 2,
+		top: pos.y - size.height / 2,
+		bottom: pos.y + size.height / 2,
+	}
 }

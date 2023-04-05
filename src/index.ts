@@ -8,7 +8,7 @@ import * as controls from 'controls'
 import {checkInputs} from "UserInput";
 
 const app = new PIXI.Application({
-	width: 1000, height: 1000, backgroundColor: 0x1099bb, resolution: 1,
+	width: 920, height: 950, backgroundColor: 0x222222, resolution: 1,
 })
 document.body.appendChild(app.view)
 
@@ -21,10 +21,8 @@ UserInput.init(ctrl)
 let prevTurnTime = Date.now()
 app.ticker.add((delta) => {
 	const curTime = Date.now()
-	let turnOccurred = false
 	checkInputs(ctrl)
 	if (curTime - prevTurnTime > GAME_TICK_DURATION_IN_MS) {
-		turnOccurred = true
 		ctrl.onGameTick()
 		prevTurnTime = curTime
 	}
@@ -35,10 +33,6 @@ app.ticker.add((delta) => {
 			o.update(turnTimePercent)
 		}
 	})
-
-	if (turnOccurred) {
-		ctrl.onGameTickCleanup()
-	}
 
 	debug.update(ctrl.state)
 })

@@ -22,8 +22,8 @@ export default class DebugState {
 }
 
 function replacer(key: string, value: any) {
-	if (key === 'visual') {
-		return '<Visual...>'
+	if (key === 'components') {
+		return Array.from((value as Map<string, any>).keys()).join()
 	}
 	if (key === 'field' && typeof value === 'object') {
 		return '<...>'

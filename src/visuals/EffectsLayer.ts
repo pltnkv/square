@@ -1,16 +1,10 @@
 import * as PIXI from 'pixi.js'
-import {FIELD_SIZE, TILE_SIZE} from 'consts'
-import IState, {ICell, IPoint, ISpell} from 'logic/IState'
-import BaseVisual from 'objects/BaseVisual'
+import {IPoint} from 'logic/IState'
+import BaseVisual from 'visuals/BaseVisual'
 
 export default class EffectsLayer extends BaseVisual {
 
-	private view: PIXI.Container
-
-	constructor() {
-		super()
-		this.view = new PIXI.Container()
-	}
+	private view: PIXI.Container = new PIXI.Container()
 
 	showExplosion(pos: IPoint) {
 		const textures = []
@@ -21,6 +15,7 @@ export default class EffectsLayer extends BaseVisual {
 
 		const explosion = new PIXI.AnimatedSprite(textures)
 		explosion.animationSpeed = 0.2
+		explosion.rotation = Math.PI * 2 * Math.random()
 		explosion.x = pos.x
 		explosion.y = pos.y
 		explosion.anchor.set(0.5)

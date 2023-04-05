@@ -1,9 +1,17 @@
 import Controller from "./Controller";
-import IState, {ICell, IMovableObject, IPoint, ISpell, ISpellCell} from "./IState";
-import {BAT_SPEED, FIELD_SIZE, MAX_BAT_STEPS_IN_LINE, PLAYER_SPEED, SPELL_LIFESPAN, SPELL_SPEED} from "../consts";
+import IState, {IBoundingBox, IPoint} from "./IState";
+import {TILE_SIZE} from "../consts";
 import Direction from "./Direction";
-import {addVectors, directionToVector, getBoundingBoxFromObj} from "../utils/mathUtils";
-import {getRandomDirection} from "../utils/stateUtils";
+import {SpellCasterComponentKey} from "../components/SpellCasterComponent";
+import {GameObject} from "./GameObject";
+import {MovableComponentKey} from "../components/MovableComponent";
+import {HPComponentKey} from "../components/HPComponent";
+import {SpellComponentKey} from "../components/SpellComponent";
+import {EnemyComponentKey} from "../components/EnemyComponent";
+import {SpellableComponentKey} from "../components/SpellableComponent";
+import {PositionComponentKey} from "../components/PositionComponent";
+import {posAndSizeToBoundingBox} from "../utils/stateUtils";
+import {ObstacleComponentKey} from "../components/ObstacleComponent";
 
 /**
  * modify state only here
@@ -20,139 +28,128 @@ export function onGameTick(ctrl: Controller, state: IState) {
 	// MOVE OR PROCESS
 	////////////////////////////////////////////////
 
-	//run spell or move player
-	state.players.forEach(player => {
-		if (player.destroyed) {
-			return
+	//toto iterate only over objects with MovableComponent
+	state.objects.forEach(object => {
+		// Move object
+		const movable = object.as(MovableComponentKey)
+		if (movable) {
+			movable.onMove(object)
 		}
 
-		if (player.moveAction) {
-			if (player.moveAction.type === 'move') {
-				const speed = directionToVector(player.direction, PLAYER_SPEED)
-				addVectors(player.pos, speed)
-			} else if (player.moveAction.type === 'turn') {
-				// do nothing
-			}
-			player.moveAction = undefined
-		}
-
-		if (player.fireSpell) {
-			ctrl.createSpell(player)
-			player.fireSpell = false
+		// Cast a spell
+		const spellCaster = object.as(SpellCasterComponentKey)
+		if (spellCaster && spellCaster.state.castSpell) {
+			spellCaster.onCreateSpell(object)
+			spellCaster.state.castSpell = false
 		}
 	})
 
-	// move bats
-	state.bats.forEach(bat => {
-		if (bat.plannedStepInDirection > 0) {
-			// do move
-			bat.plannedStepInDirection--
-
-			// todo
-			// const speed = getSpeedByDirection(bat.direction, BAT_SPEED)
-			// addVectorPointWithMutation(bat.pos, speed)
-		} else {
-			//change direction
-			bat.direction = getRandomDirection()
-			// bat.plannedStepInDirection = Math.round(Math.random() * MAX_BAT_STEPS_IN_LINE)
-			bat.plannedStepInDirection = MAX_BAT_STEPS_IN_LINE
-		}
-	})
-
-	//move spell
-	state.spells.forEach(spell => {
-		if (spell.leftMoves > 0) {
-			spell.leftMoves--
-			const speed = directionToVector(spell.direction, SPELL_SPEED)
-			addVectors(spell.pos, speed)
-		}
-	})
 
 	////////////////////////////////////////////////
 	// CREATE NEW OBJECTS
 	////////////////////////////////////////////////
 
 	// spawn bats
-	if (state.bats.length < 1) {
-		// if (state.bats.length < 3 && Math.random() > 0.8) {
-		ctrl.createBat()
-	}
+	// if (state.bats.length < 1) {
+	// if (state.bats.length < 3 && Math.random() > 0.8) {
+	// ctrl.createBat()
+	// }
 
 
 	////////////////////////////////////////////////
 	// CHECK COLLISIONS
 	////////////////////////////////////////////////
 
-	//check spell collision
-	state.spells.forEach(spell => {
-		state.players.forEach(player => {
-			if (hasCollision(spell, player)) {
-				spell.leftMoves = 0
-				reduceHP(player)
-			}
-		})
-		state.bats.forEach(bat => {
-			if (hasCollision(spell, bat)) {
-				spell.leftMoves = 0
-				reduceHP(bat)
-			}
-		})
-	})
-
-	//check collision player with bats
-	state.bats.forEach(bat => {
-		state.players.forEach(player => {
-			if (hasCollision(bat, player)) {
-				reduceHP(bat)
-				reduceHP(player)
-			}
-		})
-	})
-
-	////////////////////////////////////////////////
-	// CLEAN UP
-	////////////////////////////////////////////////
-
-	state.spells = state.spells.filter(o => {
-		const destroyed = o.leftMoves === 0
-		if (destroyed) {
-			ctrl.removeVisual(o.visual)
+	state.objects.forEach(object => {
+		const spellComp = object.as(SpellComponentKey)
+		if (spellComp) {
+			//TODO iterate only over objects with position
+			state.objects.forEach(object2 => {
+				if (object === object2) {  // ignore overlap with itself
+					return
+				}
+				if (object2.has(SpellableComponentKey)) {
+					if (hasCollisionInObjects(object, object2)) {
+						tryReduceHP(object)
+						tryReduceHP(object2)
+					}
+				}
+			})
 		}
-		return !destroyed
-	})
 
-	state.bats = state.bats.filter(o => {
-		const destroyed = o.hp === 0
-		if (destroyed) {
-			ctrl.removeVisual(o.visual)
-			ctrl.effects.showExplosion(o.pos)
-		}
-		return !destroyed
-	})
-
-	state.players.forEach(o => {
-		const destroyed = o.hp === 0
-		if (destroyed) {
-			ctrl.removeVisual(o.visual)
-			ctrl.effects.showExplosion(o.pos)
+		const enemyComp = object.as(EnemyComponentKey)
+		if (enemyComp) {
+			state.players.forEach(object2 => {
+				if (hasCollisionInObjects(object, object2)) {
+					tryReduceHP(object)
+					tryReduceHP(object2)
+				}
+			})
 		}
 	})
 }
 
-function hasCollision(obj1: IMovableObject, obj2: IMovableObject): boolean {
-	const box1 = getBoundingBoxFromObj(obj1)
-	const box2 = getBoundingBoxFromObj(obj2)
-	if (box1.left > box2.right || box1.right < box2.left || box1.top > box2.bottom || box1.bottom < box2.top) {
+function tryReduceHP(object: GameObject) {
+	const objectHPComp = object.as(HPComponentKey)
+	if (objectHPComp) {
+		objectHPComp.state.hp--
+		if (objectHPComp.state.hp > 0) {
+			objectHPComp.onDamaged(object)
+		} else {
+			objectHPComp.onDestroyed(object)
+		}
+	}
+}
+
+export function hasCollisionsWithObstacles(object: GameObject, targetPos: IPoint, objects: GameObject[]): boolean {
+	const posComp = object.require(PositionComponentKey)
+	const targetBB = posAndSizeToBoundingBox(targetPos, posComp.state.size)
+	for (let i = 0; i < objects.length; i++) {
+		if (object !== objects[i] && objects[i].has(ObstacleComponentKey)) {
+			const obj2PosComp = objects[i].require(PositionComponentKey)
+			if (hasCollisionInBB(targetBB, obj2PosComp.state.boundingBox)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+
+export function adjustPositionAfterTurn(pos: IPoint, direction: Direction) {
+	if (direction === Direction.Up || direction === Direction.Down) {
+		pos.x = adjustCoord(pos.x)
+	}
+	if (direction === Direction.Left || direction === Direction.Right) {
+		pos.y = adjustCoord(pos.y)
+	}
+}
+
+function adjustCoord(val: number): number {
+	const remainder = val % TILE_SIZE
+	if (Math.abs(TILE_SIZE / 2 - remainder) < 30) {
+		// center of current cell
+		return (val - remainder) + TILE_SIZE / 2
+	} else {
+		return val
+	}
+}
+
+function hasCollisionInObjects(obj1: GameObject, obj2: GameObject): boolean {
+	const pos1 = obj1.require(PositionComponentKey)
+	const pos2 = obj2.require(PositionComponentKey)
+	return hasCollisionInBB(pos1.state.boundingBox, pos2.state.boundingBox)
+}
+
+function hasCollisionInBB(bb1: IBoundingBox, bb2: IBoundingBox): boolean {
+	if (bb1.left > bb2.right
+		|| bb1.right < bb2.left
+		|| bb1.top > bb2.bottom
+		|| bb1.bottom < bb2.top) {
 		// no collision
 		return false
 	}
 
 	// collision detected
 	return true
-}
-
-function reduceHP(obj: { hp: number }) {
-	if (obj.hp > 0) {
-		obj.hp--
-	}
 }

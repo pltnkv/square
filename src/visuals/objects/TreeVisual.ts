@@ -1,12 +1,12 @@
 import * as PIXI from 'pixi.js'
-import {IBat, ITree} from 'logic/IState'
 import {applyPosition} from "../../utils/moveUtils";
-import BaseObjectVisual from "../BaseObjectVisual";
+import BaseObjectVisual from "./BaseObjectVisual";
+import {GameObject} from "../../logic/GameObject";
 
-export default class TreeVisual extends BaseObjectVisual<ITree> {
+export default class TreeVisual extends BaseObjectVisual {
 
-	constructor(state: ITree) {
-		super(state)
+	constructor(object: GameObject) {
+		super(object)
 
 		const texture = PIXI.Texture.from('assets/tree.png')
 		const tree = new PIXI.Sprite(texture)
@@ -19,6 +19,6 @@ export default class TreeVisual extends BaseObjectVisual<ITree> {
 	}
 
 	update(turnTimePercent: number) {
-		applyPosition(this.view, this.state)
+		applyPosition(this.view, this.object)
 	}
 }

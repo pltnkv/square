@@ -1,6 +1,6 @@
 (self["webpackChunksquare"] = self["webpackChunksquare"] || []).push([[179],{
 
-/***/ 2:
+/***/ 411:
 /***/ ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -8,14 +8,14 @@
 // EXTERNAL MODULE: ./node_modules/pixi.js/lib/pixi.es.js + 37 modules
 var pixi_es = __webpack_require__(244);
 // CONCATENATED MODULE: ./src/logic/Direction.ts
-var Direction;
+var Direction_Direction;
 (function (Direction) {
     Direction[Direction["Down"] = 1] = "Down";
     Direction[Direction["Left"] = 2] = "Left";
     Direction[Direction["Up"] = 3] = "Up";
     Direction[Direction["Right"] = 4] = "Right";
-})(Direction || (Direction = {}));
-/* harmony default export */ const logic_Direction = (Direction);
+})(Direction_Direction || (Direction_Direction = {}));
+/* harmony default export */ const logic_Direction = (Direction_Direction);
 
 // CONCATENATED MODULE: ./src/UserInput.ts
 
@@ -75,22 +75,37 @@ function checkInputs(ctrl) {
 //biruzoviy 2ec4b6
 //red e71d36
 //orange ff9f1c
-const TILE_SIZE = 90;
+/**
+export const TILE_SIZE = 90
+export const FIELD_SIZE = 10
+export const GAME_TICK_DURATION_IN_MS = 140
+export const TIME_BETWEEN_MOVES = 120
+export const TIME_BETWEEN_SPELLS = 500
+export const MAX_SPELL_CHARGES = 2
+export const MAX_PLAYER_HP = 3
+export const SPELL_LIFESPAN = 16
+export const MAX_BAT_STEPS_IN_LINE = 30
+
+export const PLAYER_SPEED = 30
+export const SPELL_SPEED = 40
+export const BAT_SPEED = 10
+ */
+const consts_TILE_SIZE = 90;
 const FIELD_SIZE = 10;
-const GAME_TICK_DURATION_IN_MS = 100;
-const TIME_BETWEEN_MOVES = 80;
-const TIME_BETWEEN_SPELLS = 500;
+const GAME_TICK_DURATION_IN_MS = 30;
+const TIME_BETWEEN_MOVES = 50;
+const TIME_BETWEEN_SPELLS = 400;
 const MAX_SPELL_CHARGES = 2;
-const MAX_HP = 3;
-const SPELL_LIFESPAN = 16;
+const MAX_PLAYER_HP = 3;
+const SPELL_LIFESPAN = 100;
 const MAX_BAT_STEPS_IN_LINE = 30;
-const PLAYER_SPEED = 30;
-const SPELL_SPEED = 40;
+const PLAYER_SPEED = 10;
+const SPELL_SPEED = 20;
 const BAT_SPEED = 10;
-const DEBUG_SIZES = true;
+const DEBUG_SIZES = false;
 const DEBUG_STATE = false;
 
-// CONCATENATED MODULE: ./src/objects/BaseVisual.ts
+// CONCATENATED MODULE: ./src/visuals/BaseVisual.ts
 class BaseVisual {
     shouldUpdate() {
         return true;
@@ -103,7 +118,7 @@ class BaseVisual {
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/GameFieldLayer.ts
+// CONCATENATED MODULE: ./src/visuals/GameFieldLayer.ts
 
 
 
@@ -112,6 +127,17 @@ class GameFieldLayer extends BaseVisual {
         super();
         this.state = state;
         this.view = new pixi_es/* Graphics */.TC();
+        const texture = pixi_es/* Texture.from */.xE.from('assets/bg_tile.png');
+        //create field
+        for (let i = 0; i < FIELD_SIZE; i++) {
+            for (let j = 0; j < FIELD_SIZE; j++) {
+                const tile = new pixi_es/* Sprite */.jy(texture);
+                tile.alpha = 0.5;
+                tile.x = i * consts_TILE_SIZE;
+                tile.y = j * consts_TILE_SIZE;
+                this.view.addChild(tile);
+            }
+        }
     }
     getView() {
         return this.view;
@@ -123,19 +149,19 @@ class GameFieldLayer extends BaseVisual {
             for (let j = 0; j < FIELD_SIZE; j++) {
                 this.view.beginFill(0xfdfffc);
                 this.view.lineStyle(1, 0x011627, 1);
-                this.view.drawRect(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
                 this.view.endFill();
             }
         }
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/EffectsLayer.ts
+// CONCATENATED MODULE: ./src/visuals/EffectsLayer.ts
 
 
 class EffectsLayer extends BaseVisual {
     constructor() {
-        super();
+        super(...arguments);
         this.view = new pixi_es/* Container */.W2();
     }
     showExplosion(pos) {
@@ -146,6 +172,7 @@ class EffectsLayer extends BaseVisual {
         }
         const explosion = new pixi_es/* AnimatedSprite */.Kg(textures);
         explosion.animationSpeed = 0.2;
+        explosion.rotation = Math.PI * 2 * Math.random();
         explosion.x = pos.x;
         explosion.y = pos.y;
         explosion.anchor.set(0.5);
@@ -169,7 +196,7 @@ class EffectsLayer extends BaseVisual {
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/PanelLayer.ts
+// CONCATENATED MODULE: ./src/visuals/PanelLayer.ts
 
 
 class PanelLayer extends BaseVisual {
@@ -193,49 +220,82 @@ class PanelLayer extends BaseVisual {
     }
 }
 
-// CONCATENATED MODULE: ./src/utils/mathUtils.ts
+// CONCATENATED MODULE: ./src/components/BaseComponent.ts
+class BaseComponent {
+}
 
-function lerp(a1, a2, t) {
-    return a1 * (1 - t) + a2 * t;
-}
-function addVectors(target, added) {
-    target.x += added.x;
-    target.y += added.y;
-    return target;
-}
-function multVector(target, value) {
-    target.x *= value;
-    target.y += value;
-    return target;
-}
-function getBoundingBoxFromObj(obj) {
-    return {
-        left: obj.pos.x - obj.size.width / 2,
-        right: obj.pos.x + obj.size.width / 2,
-        top: obj.pos.y - obj.size.height / 2,
-        bottom: obj.pos.y + obj.size.height / 2,
-    };
-}
-/**
- * Returns normal vector by default
- */
-function directionToVector(direction, value = 1) {
-    if (direction === logic_Direction.Up) {
-        return { x: 0, y: -value };
+// CONCATENATED MODULE: ./src/components/SpellCasterComponent.ts
+
+const SpellCasterComponentKey = 'SpellCaster';
+class SpellCasterComponent extends BaseComponent {
+    constructor(state, onCreateSpell) {
+        super();
+        this.state = state;
+        this.onCreateSpell = onCreateSpell;
     }
-    if (direction === logic_Direction.Down) {
-        return { x: 0, y: value };
+}
+
+// CONCATENATED MODULE: ./src/components/MovableComponent.ts
+
+const MovableComponentKey = 'Movable';
+class MovableComponent extends BaseComponent {
+    constructor(state, onMove) {
+        super();
+        this.state = state;
+        this.onMove = onMove;
     }
-    if (direction === logic_Direction.Left) {
-        return { x: -value, y: 0 };
+}
+
+// CONCATENATED MODULE: ./src/components/HPComponent.ts
+
+const HPComponentKey = 'HP';
+class HPComponent extends BaseComponent {
+    constructor(state, onDamaged, onDestroyed) {
+        super();
+        this.state = state;
+        this.onDamaged = onDamaged;
+        this.onDestroyed = onDestroyed;
     }
-    if (direction === logic_Direction.Right) {
-        return { x: value, y: 0 };
+}
+
+// CONCATENATED MODULE: ./src/components/SpellComponent.ts
+
+const SpellComponentKey = 'Spell';
+class SpellComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
     }
-    throw 'unknown direction';
+}
+
+// CONCATENATED MODULE: ./src/components/EnemyComponent.ts
+
+const EnemyComponentKey = 'Enemy';
+class EnemyComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/SpellableComponent.ts
+
+const SpellableComponentKey = 'Spellable';
+class SpellableComponent extends BaseComponent {
+}
+
+// CONCATENATED MODULE: ./src/components/PlayerComponent.ts
+
+const PlayerComponentKey = 'Player';
+class PlayerComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
 }
 
 // CONCATENATED MODULE: ./src/utils/stateUtils.ts
+
 
 
 ////////////////////////////////////////////
@@ -268,13 +328,64 @@ function getRandomDirection() {
     return directions[Math.floor(Math.random() * directions.length)];
 }
 function getPlayer(state, playerId) {
-    return state.players.find(p => p.id === playerId);
+    return state.players.find(p => {
+        const playerComp = p.require(PlayerComponentKey);
+        return playerComp.state.id === playerId;
+    });
 }
-function cellToCoord(i) {
-    return i * TILE_SIZE + TILE_SIZE / 2;
+function posAndSizeToBoundingBox(pos, size) {
+    return {
+        left: pos.x - size.width / 2,
+        right: pos.x + size.width / 2,
+        top: pos.y - size.height / 2,
+        bottom: pos.y + size.height / 2,
+    };
+}
+
+// CONCATENATED MODULE: ./src/components/PositionComponent.ts
+
+
+const PositionComponent_PositionComponentKey = 'Position';
+class PositionComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+        this.calcBoundingBox();
+    }
+    setPos(value) {
+        const s = this.state;
+        s.pos = value;
+        this.calcBoundingBox();
+    }
+    setDirection(value) {
+        const s = this.state;
+        s.direction = value;
+    }
+    calcBoundingBox() {
+        const s = this.state;
+        s.boundingBox = posAndSizeToBoundingBox(this.state.pos, this.state.size);
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/ObstacleComponent.ts
+
+const ObstacleComponentKey = 'Obstacle';
+class ObstacleComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
 }
 
 // CONCATENATED MODULE: ./src/logic/GameLoopLogic.ts
+
+
+
+
+
+
+
+
 
 
 
@@ -290,205 +401,266 @@ function onGameTick(ctrl, state) {
     ////////////////////////////////////////////////
     // MOVE OR PROCESS
     ////////////////////////////////////////////////
-    //run spell or move player
-    state.players.forEach(player => {
-        if (player.destroyed) {
-            return;
+    //toto iterate only over objects with MovableComponent
+    state.objects.forEach(object => {
+        // Move object
+        const movable = object.as(MovableComponentKey);
+        if (movable) {
+            movable.onMove(object);
         }
-        if (player.moveAction) {
-            if (player.moveAction.type === 'move') {
-                const speed = directionToVector(player.direction, PLAYER_SPEED);
-                addVectors(player.pos, speed);
-            }
-            else if (player.moveAction.type === 'turn') {
-                // do nothing
-            }
-            player.moveAction = undefined;
-        }
-        if (player.fireSpell) {
-            ctrl.createSpell(player);
-            player.fireSpell = false;
-        }
-    });
-    // move bats
-    state.bats.forEach(bat => {
-        if (bat.plannedStepInDirection > 0) {
-            // do move
-            bat.plannedStepInDirection--;
-            // todo
-            // const speed = getSpeedByDirection(bat.direction, BAT_SPEED)
-            // addVectorPointWithMutation(bat.pos, speed)
-        }
-        else {
-            //change direction
-            bat.direction = getRandomDirection();
-            // bat.plannedStepInDirection = Math.round(Math.random() * MAX_BAT_STEPS_IN_LINE)
-            bat.plannedStepInDirection = MAX_BAT_STEPS_IN_LINE;
-        }
-    });
-    //move spell
-    state.spells.forEach(spell => {
-        if (spell.leftMoves > 0) {
-            spell.leftMoves--;
-            const speed = directionToVector(spell.direction, SPELL_SPEED);
-            addVectors(spell.pos, speed);
+        // Cast a spell
+        const spellCaster = object.as(SpellCasterComponentKey);
+        if (spellCaster && spellCaster.state.castSpell) {
+            spellCaster.onCreateSpell(object);
+            spellCaster.state.castSpell = false;
         }
     });
     ////////////////////////////////////////////////
     // CREATE NEW OBJECTS
     ////////////////////////////////////////////////
     // spawn bats
-    if (state.bats.length < 1) {
-        // if (state.bats.length < 3 && Math.random() > 0.8) {
-        ctrl.createBat();
-    }
+    // if (state.bats.length < 1) {
+    // if (state.bats.length < 3 && Math.random() > 0.8) {
+    // ctrl.createBat()
+    // }
     ////////////////////////////////////////////////
     // CHECK COLLISIONS
     ////////////////////////////////////////////////
-    //check spell collision
-    state.spells.forEach(spell => {
-        state.players.forEach(player => {
-            if (hasCollision(spell, player)) {
-                spell.leftMoves = 0;
-                reduceHP(player);
-            }
-        });
-        state.bats.forEach(bat => {
-            if (hasCollision(spell, bat)) {
-                spell.leftMoves = 0;
-                reduceHP(bat);
-            }
-        });
-    });
-    //check collision player with bats
-    state.bats.forEach(bat => {
-        state.players.forEach(player => {
-            if (hasCollision(bat, player)) {
-                reduceHP(bat);
-                reduceHP(player);
-            }
-        });
-    });
-    ////////////////////////////////////////////////
-    // CLEAN UP
-    ////////////////////////////////////////////////
-    state.spells = state.spells.filter(o => {
-        const destroyed = o.leftMoves === 0;
-        if (destroyed) {
-            ctrl.removeVisual(o.visual);
+    state.objects.forEach(object => {
+        const spellComp = object.as(SpellComponentKey);
+        if (spellComp) {
+            //TODO iterate only over objects with position
+            state.objects.forEach(object2 => {
+                if (object === object2) { // ignore overlap with itself
+                    return;
+                }
+                if (object2.has(SpellableComponentKey)) {
+                    if (hasCollisionInObjects(object, object2)) {
+                        tryReduceHP(object);
+                        tryReduceHP(object2);
+                    }
+                }
+            });
         }
-        return !destroyed;
-    });
-    state.bats = state.bats.filter(o => {
-        const destroyed = o.hp === 0;
-        if (destroyed) {
-            ctrl.removeVisual(o.visual);
-            ctrl.effects.showExplosion(o.pos);
-        }
-        return !destroyed;
-    });
-    state.players.forEach(o => {
-        const destroyed = o.hp === 0;
-        if (destroyed) {
-            ctrl.removeVisual(o.visual);
-            ctrl.effects.showExplosion(o.pos);
+        const enemyComp = object.as(EnemyComponentKey);
+        if (enemyComp) {
+            state.players.forEach(object2 => {
+                if (hasCollisionInObjects(object, object2)) {
+                    tryReduceHP(object);
+                    tryReduceHP(object2);
+                }
+            });
         }
     });
 }
-function hasCollision(obj1, obj2) {
-    const box1 = getBoundingBoxFromObj(obj1);
-    const box2 = getBoundingBoxFromObj(obj2);
-    if (box1.left > box2.right || box1.right < box2.left || box1.top > box2.bottom || box1.bottom < box2.top) {
+function tryReduceHP(object) {
+    const objectHPComp = object.as(HPComponentKey);
+    if (objectHPComp) {
+        objectHPComp.state.hp--;
+        if (objectHPComp.state.hp > 0) {
+            objectHPComp.onDamaged(object);
+        }
+        else {
+            objectHPComp.onDestroyed(object);
+        }
+    }
+}
+function hasCollisionsWithObstacles(object, targetPos, objects) {
+    const posComp = object.require(PositionComponent_PositionComponentKey);
+    const targetBB = posAndSizeToBoundingBox(targetPos, posComp.state.size);
+    for (let i = 0; i < objects.length; i++) {
+        if (object !== objects[i] && objects[i].has(ObstacleComponentKey)) {
+            const obj2PosComp = objects[i].require(PositionComponent_PositionComponentKey);
+            if (hasCollisionInBB(targetBB, obj2PosComp.state.boundingBox)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function adjustPositionAfterTurn(pos, direction) {
+    if (direction === Direction.Up || direction === Direction.Down) {
+        pos.x = adjustCoord(pos.x);
+    }
+    if (direction === Direction.Left || direction === Direction.Right) {
+        pos.y = adjustCoord(pos.y);
+    }
+}
+function adjustCoord(val) {
+    const remainder = val % TILE_SIZE;
+    if (Math.abs(TILE_SIZE / 2 - remainder) < 30) {
+        // center of current cell
+        return (val - remainder) + TILE_SIZE / 2;
+    }
+    else {
+        return val;
+    }
+}
+function hasCollisionInObjects(obj1, obj2) {
+    const pos1 = obj1.require(PositionComponent_PositionComponentKey);
+    const pos2 = obj2.require(PositionComponent_PositionComponentKey);
+    return hasCollisionInBB(pos1.state.boundingBox, pos2.state.boundingBox);
+}
+function hasCollisionInBB(bb1, bb2) {
+    if (bb1.left > bb2.right
+        || bb1.right < bb2.left
+        || bb1.top > bb2.bottom
+        || bb1.bottom < bb2.top) {
         // no collision
         return false;
     }
     // collision detected
     return true;
 }
-function reduceHP(obj) {
-    if (obj.hp > 0) {
-        obj.hp--;
+
+// CONCATENATED MODULE: ./src/map.ts
+const o = 'empty';
+const p = 'player1';
+const P = 'player2';
+const t = 'tree';
+const w = 'water';
+const b = 'bat';
+const MapEmpty = (/* unused pure expression or super */ null && (o));
+const MapTree = t;
+const MapWater = w;
+const MapBat = b;
+const MapPlayer1 = p;
+const MapPlayer2 = P;
+const map1 = [
+    [p, o, o, o, P, o, o, o, o, o],
+    [o, o, t, o, o, o, o, t, t, b],
+    [o, o, t, t, b, o, o, o, t, o],
+    [o, o, o, t, t, o, o, o, o, o],
+    [o, o, o, o, o, o, o, o, o, o],
+    [o, o, o, o, o, t, t, t, o, o],
+    [o, o, o, o, o, w, w, o, o, o],
+    [o, o, b, o, w, w, t, o, o, o],
+    [o, o, o, w, w, b, o, o, o, o],
+    [o, o, w, w, w, o, o, o, o, o],
+];
+
+// CONCATENATED MODULE: ./src/logic/MapBuilder.ts
+
+function buildMap(map, ctrl) {
+    for (let j = 0; j < map.length; j++) {
+        const mapRow = map[j];
+        for (let i = 0; i < mapRow.length; i++) {
+            const cellValue = mapRow[i];
+            const cell = { i, j };
+            switch (cellValue) {
+                case MapPlayer1:
+                    ctrl.objectFactory.createPlayer(cell, 0, 0x2ec4b6);
+                    break;
+                case MapPlayer2:
+                    ctrl.objectFactory.createPlayer(cell, 1, 0xfd4976);
+                    break;
+                case MapBat:
+                    ctrl.objectFactory.createBat(cell);
+                    break;
+                case MapTree:
+                    ctrl.objectFactory.createTree(cell);
+                    break;
+                case MapWater:
+                    ctrl.objectFactory.createWater(cell);
+                    break;
+                default:
+                    // create nothing
+                    break;
+            }
+        }
     }
 }
 
 // CONCATENATED MODULE: ./src/utils/moveUtils.ts
 
-function applyPosition(view, obj) {
-    view.x = obj.pos.x;
-    view.y = obj.pos.y;
+
+function applyPosition(view, object) {
+    const comp = object.require(PositionComponent_PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
 }
-function applyPositionAndRotation(view, obj) {
-    view.x = obj.pos.x;
-    view.y = obj.pos.y;
-    view.rotation = directionToRad(obj.direction);
+function applyPositionAndRotation(view, object) {
+    const comp = object.require(PositionComponent_PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
+    view.rotation = directionToRad(comp.state.direction);
 }
 
 // CONCATENATED MODULE: ./src/utils/debugUtils.ts
 
-function addDebugView(view, obj) {
+function addDebugView(view, comp) {
     const g = new pixi_es/* Graphics */.TC();
     g.lineStyle(1, 0xff9f1c, 0.8);
-    g.drawRect(-obj.size.width / 2, -obj.size.height / 2, obj.size.width, obj.size.height);
+    g.drawRect(-comp.state.size.width / 2, -comp.state.size.height / 2, comp.state.size.width, comp.state.size.height);
     view.addChild(g);
 }
 
-// CONCATENATED MODULE: ./src/objects/BaseObjectVisual.ts
+// CONCATENATED MODULE: ./src/visuals/objects/BaseObjectVisual.ts
+
 
 
 
 
 
 class BaseObjectVisual extends BaseVisual {
-    constructor(state) {
+    constructor(object) {
         super();
         this.view = new pixi_es/* Container */.W2();
-        this.state = state;
+        this.object = object;
         if (DEBUG_SIZES) {
-            addDebugView(this.view, state);
+            const comp = object.as(PositionComponent_PositionComponentKey);
+            if (comp) {
+                addDebugView(this.view, comp);
+            }
         }
     }
     getView() {
         return this.view;
     }
     update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.state);
+        applyPositionAndRotation(this.view, this.object);
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/movable/SpellVisual.ts
+// CONCATENATED MODULE: ./src/visuals/objects/SpellVisual.ts
+
 
 
 
 class SpellVisual extends BaseObjectVisual {
-    constructor(state) {
-        super(state);
+    constructor(object) {
+        super(object);
+        const positionComponent = this.object.require(PositionComponent_PositionComponentKey);
         const g = new pixi_es/* Graphics */.TC();
         g.alpha = 0.6;
         g.beginFill(0xe71d36);
-        g.drawCircle(0, 0, state.size.width / 2);
+        g.drawCircle(0, 0, positionComponent.state.size.width / 2);
         g.endFill();
         this.view.addChild(g);
     }
     update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.state);
+        applyPositionAndRotation(this.view, this.object);
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/movable/PlayerVisual.ts
+// CONCATENATED MODULE: ./src/visuals/objects/PlayerVisual.ts
+
+
 
 
 
 
 class PlayerVisual extends BaseObjectVisual {
-    constructor(state) {
-        super(state);
+    constructor(object) {
+        super(object);
+        const comp = object.require(PlayerComponentKey);
         const texture = pixi_es/* Texture.from */.xE.from('assets/bunny.png');
         const bunny = new pixi_es/* Sprite */.jy(texture);
         bunny.anchor.set(0.5);
         bunny.scale.set(1.4);
         bunny.x = 0;
         bunny.y = 0;
-        bunny.tint = state.tintColor;
+        bunny.tint = comp.state.tintColor;
         // const style = new PIXI.TextStyle({
         // 	align: 'center',
         // 	fontFamily: 'Arial',
@@ -502,18 +674,19 @@ class PlayerVisual extends BaseObjectVisual {
         this.view.addChild(bunny);
     }
     update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.state);
-        this.view.alpha = this.state.hp / MAX_HP;
+        applyPositionAndRotation(this.view, this.object);
+        const comp = this.object.require(HPComponentKey);
+        this.view.alpha = comp.state.hp / MAX_PLAYER_HP;
     }
 }
 
-// CONCATENATED MODULE: ./src/objects/movable/BatVisual.ts
+// CONCATENATED MODULE: ./src/visuals/objects/BatVisual.ts
 
 
 
 class BatVisual extends BaseObjectVisual {
-    constructor(state) {
-        super(state);
+    constructor(object) {
+        super(object);
         const bat11 = pixi_es/* Texture.from */.xE.from('assets/bat21.png');
         const bat12 = pixi_es/* Texture.from */.xE.from('assets/bat22.png');
         // const bat21 = PIXI.Texture.from('assets/bat21.png')
@@ -527,18 +700,88 @@ class BatVisual extends BaseObjectVisual {
         this.view.addChild(bat);
     }
     update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.state);
+        applyPositionAndRotation(this.view, this.object);
     }
 }
 //WTF?
 
-// CONCATENATED MODULE: ./src/objects/movable/TreeVisual.ts
+// CONCATENATED MODULE: ./src/utils/mathUtils.ts
+
+
+
+function lerp(a1, a2, t) {
+    return a1 * (1 - t) + a2 * t;
+}
+function addVectors(target, added, mutate = true) {
+    if (mutate) {
+        target.x += added.x;
+        target.y += added.y;
+        return target;
+    }
+    else {
+        return {
+            x: target.x + added.x,
+            y: target.y + added.y
+        };
+    }
+}
+function multVector(target, value, mutate = true) {
+    if (mutate) {
+        target.x *= value;
+        target.y *= value;
+        return target;
+    }
+    else {
+        return {
+            x: target.x * value,
+            y: target.y * value
+        };
+    }
+}
+function getBoundingBoxFromObj(object) {
+    const positionComp = object.require(PositionComponentKey);
+    return {
+        left: positionComp.state.pos.x - positionComp.state.size.width / 2,
+        right: positionComp.state.pos.x + positionComp.state.size.width / 2,
+        top: positionComp.state.pos.y - positionComp.state.size.height / 2,
+        bottom: positionComp.state.pos.y + positionComp.state.size.height / 2,
+    };
+}
+/**
+ * Returns normal vector by default
+ */
+function directionToVector(direction, value = 1) {
+    if (direction === logic_Direction.Up) {
+        return { x: 0, y: -value };
+    }
+    if (direction === logic_Direction.Down) {
+        return { x: 0, y: value };
+    }
+    if (direction === logic_Direction.Left) {
+        return { x: -value, y: 0 };
+    }
+    if (direction === logic_Direction.Right) {
+        return { x: value, y: 0 };
+    }
+    throw 'unknown direction';
+}
+function cellToCoord(i) {
+    return i * TILE_SIZE + TILE_SIZE / 2;
+}
+function cellToPosition(cell) {
+    return {
+        x: cell.i * consts_TILE_SIZE + consts_TILE_SIZE / 2,
+        y: cell.j * consts_TILE_SIZE + consts_TILE_SIZE / 2
+    };
+}
+
+// CONCATENATED MODULE: ./src/visuals/objects/TreeVisual.ts
 
 
 
 class TreeVisual extends BaseObjectVisual {
-    constructor(state) {
-        super(state);
+    constructor(object) {
+        super(object);
         const texture = pixi_es/* Texture.from */.xE.from('assets/tree.png');
         const tree = new pixi_es/* Sprite */.jy(texture);
         tree.anchor.set(0.5);
@@ -548,7 +791,294 @@ class TreeVisual extends BaseObjectVisual {
         this.view.addChild(tree);
     }
     update(turnTimePercent) {
-        applyPosition(this.view, this.state);
+        applyPosition(this.view, this.object);
+    }
+}
+
+// CONCATENATED MODULE: ./src/visuals/objects/WaterVisual.ts
+
+
+
+
+class WaterVisual extends BaseObjectVisual {
+    constructor(object) {
+        super(object);
+        const g = new pixi_es/* Graphics */.TC();
+        g.beginFill(0x83E9FF);
+        g.drawRect(-consts_TILE_SIZE / 2, -consts_TILE_SIZE / 2, consts_TILE_SIZE, consts_TILE_SIZE);
+        g.endFill();
+        this.view.addChild(g);
+    }
+    update(turnTimePercent) {
+        applyPosition(this.view, this.object);
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/BatComponent.ts
+
+const BatComponentKey = 'bat';
+class BatComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/VisualComponent.ts
+
+const VisualComponentKey = 'Visual';
+class VisualComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/logic/GameObject.ts
+
+
+
+
+
+
+
+
+
+
+
+class GameObject {
+    constructor() {
+        this.components = new Map();
+    }
+    addComponent(key, comp) {
+        this.components.set(key, comp);
+    }
+    has(key) {
+        return this.components.has(key);
+    }
+    as(key) {
+        return this.components.get(key);
+    }
+    require(key) {
+        const comp = this.components.get(key);
+        if (!comp) {
+            throw new Error(`Require failed. Component "${key}" not found`);
+        }
+        return comp;
+    }
+}
+
+// CONCATENATED MODULE: ./src/logic/GameObjectsFactory.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GameObjectsFactory {
+    constructor(ctrl, state) {
+        this.ctrl = ctrl;
+        this.state = state;
+    }
+    createObject() {
+        const object = new GameObject();
+        this.state.objects.push(object);
+        return object;
+    }
+    createPlayer(cell, id, tintColor) {
+        const object = this.createObject();
+        object.addComponent(PlayerComponentKey, new PlayerComponent({
+            id,
+            tintColor,
+            lastAssignedMoveTime: 0,
+            lastSpellTime: 0,
+        }));
+        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+            direction: logic_Direction.Down,
+            size: { width: consts_TILE_SIZE * 0.6, height: consts_TILE_SIZE * 0.6 },
+            pos: cellToPosition(cell),
+        }));
+        object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
+            var _a;
+            const playerComp = object.require(PlayerComponentKey);
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            if (playerComp.state.moveAction) {
+                if (playerComp.state.moveAction.type === 'move') {
+                    const speed = directionToVector(positionComp.state.direction, PLAYER_SPEED);
+                    const newPos = addVectors(positionComp.state.pos, speed, false);
+                    if (((_a = playerComp.state.prevAction) === null || _a === void 0 ? void 0 : _a.type) === 'turn') {
+                        // adjustPositionAfterTurn(newPos, playerComp.state.prevAction.direction)
+                    }
+                    const collided = hasCollisionsWithObstacles(object, newPos, this.ctrl.state.objects);
+                    if (!collided) {
+                        positionComp.setPos(newPos);
+                    }
+                }
+                else if (playerComp.state.moveAction.type === 'turn') {
+                    positionComp.setDirection(playerComp.state.moveAction.direction);
+                }
+                playerComp.state.prevAction = playerComp.state.moveAction;
+                playerComp.state.moveAction = undefined;
+            }
+        }));
+        object.addComponent(HPComponentKey, new HPComponent({
+            hp: MAX_PLAYER_HP,
+        }, (object) => {
+            //todo
+        }, (object) => {
+            //todo
+        }));
+        object.addComponent(SpellCasterComponentKey, new SpellCasterComponent({
+            castSpell: false
+        }, (object) => {
+            this.createSpell(object.require(PositionComponent_PositionComponentKey));
+        }));
+        object.addComponent(SpellableComponentKey, new SpellableComponent());
+        this.addVisual(object, PlayerVisual);
+        this.state.players.push(object); // todo rethink
+    }
+    createBat(cell) {
+        const object = this.createObject();
+        object.addComponent(BatComponentKey, new BatComponent({
+            plannedStepInDirection: 0,
+        }));
+        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+            pos: cellToPosition(cell),
+            direction: logic_Direction.Down,
+            size: { width: consts_TILE_SIZE * 0.8, height: consts_TILE_SIZE * 0.8 },
+        }));
+        object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
+            const batComp = object.require(BatComponentKey);
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            if (batComp.state.plannedStepInDirection > 0) {
+                // do move
+                batComp.state.plannedStepInDirection--;
+                // todo
+                // const speed = getSpeedByDirection(bat.direction, BAT_SPEED)
+                // addVectorPointWithMutation(bat.pos, speed)
+            }
+            else {
+                //change direction
+                positionComp.setDirection(getRandomDirection());
+                // bat.plannedStepInDirection = Math.round(Math.random() * MAX_BAT_STEPS_IN_LINE)
+                batComp.state.plannedStepInDirection = MAX_BAT_STEPS_IN_LINE;
+            }
+        }));
+        object.addComponent(HPComponentKey, new HPComponent({
+            hp: 1,
+        }, (object) => {
+            //todo
+        }, (object) => {
+            this.destroyObject(object);
+        }));
+        object.addComponent(EnemyComponentKey, new EnemyComponent({
+            attackPoints: 1
+        }));
+        object.addComponent(SpellableComponentKey, new SpellableComponent());
+        this.addVisual(object, BatVisual);
+    }
+    createSpell(position) {
+        const object = this.createObject();
+        object.addComponent(SpellComponentKey, new SpellComponent({
+            leftMoves: SPELL_LIFESPAN
+        }));
+        const shift = directionToVector(position.state.direction, consts_TILE_SIZE * 0.6);
+        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+            pos: addVectors(Object.assign({}, position.state.pos), shift),
+            size: { width: consts_TILE_SIZE / 3, height: consts_TILE_SIZE / 3 },
+            direction: position.state.direction,
+        }));
+        object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            const spellComp = object.require(SpellComponentKey);
+            if (spellComp.state.leftMoves > 0) {
+                spellComp.state.leftMoves--;
+                const speed = directionToVector(positionComp.state.direction, SPELL_SPEED);
+                addVectors(positionComp.state.pos, speed);
+                positionComp.calcBoundingBox();
+            }
+            else {
+                //todo это норм менять массив во время forEach?
+                this.destroyObject(object);
+            }
+        }));
+        object.addComponent(HPComponentKey, new HPComponent({
+            hp: 1,
+        }, (object) => {
+        }, (object) => {
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            this.ctrl.effects.showExplosion(positionComp.state.pos);
+            this.destroyObject(object);
+        }));
+        object.addComponent(SpellableComponentKey, new SpellableComponent());
+        this.addVisual(object, SpellVisual);
+    }
+    createTree(cell) {
+        const object = this.createObject();
+        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+            direction: logic_Direction.Down,
+            pos: cellToPosition(cell),
+            size: { width: consts_TILE_SIZE * 0.9, height: consts_TILE_SIZE * 0.9 },
+        }));
+        object.addComponent(ObstacleComponentKey, new ObstacleComponent({ cell }));
+        object.addComponent(SpellableComponentKey, new SpellableComponent());
+        this.addVisual(object, TreeVisual);
+    }
+    createWater(cell) {
+        const object = this.createObject();
+        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+            direction: logic_Direction.Down,
+            pos: cellToPosition(cell),
+            size: { width: consts_TILE_SIZE * 0.9, height: consts_TILE_SIZE * 0.9 },
+        }));
+        object.addComponent(ObstacleComponentKey, new ObstacleComponent({ cell }));
+        this.addVisual(object, WaterVisual);
+    }
+    addVisual(object, visualClass) {
+        const visual = new visualClass(object);
+        //todo по хорошему рендер система тоже должна бегать по обхектам с визуалами
+        // т.Е. массив this.visuals мы можем грохнуть
+        object.addComponent(VisualComponentKey, new VisualComponent({ visual }));
+        this.ctrl.visuals.push(visual);
+        //todo рендерить только объекты во вьюпорте
+        this.ctrl.scene.objectsLayer.addChild(visual.getView());
+    }
+    //////////////////////////////////////////////////////////
+    // REMOVE OBJECTS
+    //////////////////////////////////////////////////////////
+    destroyObject(object) {
+        const index = this.state.objects.indexOf(object);
+        if (index !== -1) {
+            this.state.objects.splice(index, 1);
+            this.removeVisual(object);
+        }
+    }
+    removeVisual(object) {
+        const visualComp = object.as(VisualComponentKey);
+        if (visualComp) {
+            const index = this.ctrl.visuals.findIndex(v => v === visualComp.state.visual);
+            if (index !== -1) {
+                this.ctrl.visuals.splice(index, 1);
+                const view = visualComp.state.visual.getView();
+                view.parent.removeChild(view);
+            }
+        }
     }
 }
 
@@ -576,17 +1106,10 @@ class Controller {
             }
         }
         this.state = {
-            viewport: {
-                changed: true,
-                value: undefined,
-            },
-            field: fieldSells,
-            players: [],
-            spells: [],
-            bats: [],
-            trees: [],
-            doCleanUp: false
+            objects: [],
+            players: []
         };
+        this.objectFactory = new GameObjectsFactory(this, this.state);
     }
     onGameStarted() {
         const panel = new PanelLayer(this.state);
@@ -594,108 +1117,11 @@ class Controller {
         this.scene.stage.addChild(panel.getView());
         const field = new GameFieldLayer(this.state);
         this.visuals.push(field);
-        this.scene.mainLayer.addChild(field.getView());
-        this.createPlayer(0, 0x2ec4b6, 0x2ec4b6);
-        this.createPlayer(1, 0xfd4976, 0xfd4976);
-        this.createBat();
-        this.createBat();
-        this.createBat();
-        this.createTree({ i: 3, j: 3 });
-        this.createTree({ i: 6, j: 6 });
+        this.scene.objectsLayer.addChild(field.getView());
         this.effects = new EffectsLayer();
         this.visuals.push(this.effects);
-        this.scene.mainLayer.addChild(this.effects.getView());
-    }
-    //////////////////////////////////////////////////////////
-    // CREATE OBJECTS
-    //////////////////////////////////////////////////////////
-    createPlayer(id, tintColor, nextStepColor) {
-        const pos = id === 0 ? {
-            x: TILE_SIZE / 2,
-            y: TILE_SIZE / 2
-        } : {
-            x: TILE_SIZE * 3 + TILE_SIZE / 2,
-            y: TILE_SIZE / 2
-        };
-        const playerState = {
-            id,
-            direction: logic_Direction.Down,
-            destroyed: false,
-            tintColor,
-            nextStepColor,
-            hp: MAX_HP,
-            moveAction: undefined,
-            visual: undefined,
-            size: { width: TILE_SIZE * 0.8, height: TILE_SIZE * 0.8 },
-            pos,
-            fireSpell: false,
-            lastAssignedMoveTime: 0,
-            lastSpellTime: 0
-        };
-        this.state.players.push(playerState);
-        const player = new PlayerVisual(playerState);
-        playerState.visual = player;
-        this.visuals.push(player);
-        this.scene.mainLayer.addChild(player.getView());
-    }
-    createBat() {
-        // create state
-        const newBatState = {
-            pos: findEmptySell(),
-            size: { width: TILE_SIZE * 0.8, height: TILE_SIZE * 0.8 },
-            plannedStepInDirection: 0,
-            direction: logic_Direction.Down,
-            hp: 1,
-            visual: undefined
-        };
-        this.state.bats.push(newBatState);
-        // create visual
-        const batLayer = new BatVisual(newBatState);
-        newBatState.visual = batLayer;
-        this.visuals.push(batLayer);
-        this.scene.mainLayer.addChild(batLayer.getView());
-    }
-    createSpell(player) {
-        const shift = directionToVector(player.direction, TILE_SIZE / 3);
-        const newSpell = {
-            direction: player.direction,
-            pos: addVectors(Object.assign({}, player.pos), shift),
-            size: { width: TILE_SIZE / 3, height: TILE_SIZE / 3 },
-            visual: undefined,
-            leftMoves: SPELL_LIFESPAN
-        };
-        this.state.spells.push(newSpell);
-        // create visual
-        const spellLayer = new SpellVisual(newSpell);
-        newSpell.visual = spellLayer;
-        this.visuals.push(spellLayer);
-        this.scene.mainLayer.addChild(spellLayer.getView());
-    }
-    createTree(cell) {
-        const newTree = {
-            direction: logic_Direction.Down,
-            pos: { x: cellToCoord(cell.i), y: cellToCoord(cell.j) },
-            size: { width: TILE_SIZE * 0.9, height: TILE_SIZE * 0.9 },
-            visual: undefined,
-            hp: 1
-        };
-        this.state.trees.push(newTree);
-        // create visual
-        const visual = new TreeVisual(newTree);
-        newTree.visual = visual;
-        this.visuals.push(visual);
-        this.scene.mainLayer.addChild(visual.getView());
-    }
-    //////////////////////////////////////////////////////////
-    // REMOVE OBJECTS
-    //////////////////////////////////////////////////////////
-    removeVisual(visual) {
-        const index = this.visuals.findIndex(v => v === visual);
-        if (index !== -1) {
-            this.visuals.splice(index, 1);
-            const view = visual.getView();
-            view.parent.removeChild(view);
-        }
+        this.scene.effectsLayer.addChild(this.effects.getView());
+        buildMap(map1, this);
     }
     //////////////////////////////////////////////////////////
     // GAME LOOP
@@ -703,40 +1129,40 @@ class Controller {
     onGameTick() {
         onGameTick(this, this.state);
     }
-    onGameTickCleanup() {
-    }
     // ##########################################
     // Inputs processing
     // ##########################################
     onPlayerMove(playerId, direction) {
-        const player = getPlayer(this.state, playerId);
+        const playerObject = getPlayer(this.state, playerId);
+        const playerComp = playerObject.require(PlayerComponentKey);
+        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
         const currentTime = Date.now();
-        if (currentTime - player.lastAssignedMoveTime < TIME_BETWEEN_MOVES) {
+        if (currentTime - playerComp.state.lastAssignedMoveTime < TIME_BETWEEN_MOVES) {
             return;
         }
-        player.lastAssignedMoveTime = currentTime;
-        if (direction === player.direction) {
-            player.moveAction = {
+        playerComp.state.lastAssignedMoveTime = currentTime;
+        if (direction === positionComp.state.direction) {
+            playerComp.state.moveAction = {
                 type: 'move'
             };
         }
         else {
-            player.moveAction = {
+            playerComp.state.moveAction = {
                 type: 'turn',
                 direction
             };
-            //apply immediately
-            player.direction = direction;
         }
     }
     onPlayerSpell(playerId) {
-        const player = getPlayer(this.state, playerId);
+        const playerObject = getPlayer(this.state, playerId);
+        const playerComp = playerObject.require(PlayerComponentKey);
+        const spellCasterComp = playerObject.require(SpellCasterComponentKey);
         const currentTime = Date.now();
-        if (currentTime - player.lastSpellTime < TIME_BETWEEN_SPELLS) {
+        if (currentTime - playerComp.state.lastSpellTime < TIME_BETWEEN_SPELLS) {
             return;
         }
-        player.lastSpellTime = currentTime;
-        player.fireSpell = true;
+        playerComp.state.lastSpellTime = currentTime;
+        spellCasterComp.state.castSpell = true;
     }
 }
 
@@ -745,10 +1171,12 @@ class Controller {
 class Scene {
     constructor(app) {
         this.stage = app.stage;
-        const container = new pixi_es/* Container */.W2();
-        this.mainLayer = container;
-        this.mainLayer.y = 40;
-        app.stage.addChild(container);
+        this.objectsLayer = new pixi_es/* Container */.W2();
+        this.objectsLayer.y = 40;
+        app.stage.addChild(this.objectsLayer);
+        this.effectsLayer = new pixi_es/* Container */.W2();
+        this.effectsLayer.y = 40;
+        app.stage.addChild(this.effectsLayer);
         // container.x = app.screen.width / 2
         // container.y = app.screen.height / 2
         // container.pivot.x = container.width / 2
@@ -773,8 +1201,8 @@ class DebugState {
     }
 }
 function replacer(key, value) {
-    if (key === 'visual') {
-        return '<Visual...>';
+    if (key === 'components') {
+        return Array.from(value.keys()).join();
     }
     if (key === 'field' && typeof value === 'object') {
         return '<...>';
@@ -802,7 +1230,7 @@ function controls_init(app) {
 
 
 const app = new pixi_es/* Application */.Mx({
-    width: 1000, height: 1000, backgroundColor: 0x1099bb, resolution: 1,
+    width: 920, height: 950, backgroundColor: 0x222222, resolution: 1,
 });
 document.body.appendChild(app.view);
 const debug = new DebugState();
@@ -813,10 +1241,8 @@ init(ctrl);
 let prevTurnTime = Date.now();
 app.ticker.add((delta) => {
     const curTime = Date.now();
-    let turnOccurred = false;
     checkInputs(ctrl);
     if (curTime - prevTurnTime > GAME_TICK_DURATION_IN_MS) {
-        turnOccurred = true;
         ctrl.onGameTick();
         prevTurnTime = curTime;
     }
@@ -826,9 +1252,6 @@ app.ticker.add((delta) => {
             o.update(turnTimePercent);
         }
     });
-    if (turnOccurred) {
-        ctrl.onGameTickCleanup();
-    }
     debug.update(ctrl.state);
 });
 controls_init(app);
@@ -837,4 +1260,4 @@ controls_init(app);
 /***/ })
 
 },
-0,[[2,666,244]]]);
+0,[[411,666,244]]]);

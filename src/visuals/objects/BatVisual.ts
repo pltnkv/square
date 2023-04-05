@@ -1,12 +1,12 @@
 import * as PIXI from 'pixi.js'
-import {IBat} from 'logic/IState'
-import BaseObjectVisual from "../BaseObjectVisual"
+import BaseObjectVisual from "./BaseObjectVisual"
 import {applyPositionAndRotation} from "../../utils/moveUtils";
+import {GameObject} from "../../logic/GameObject";
 
-export default class BatVisual extends BaseObjectVisual<IBat> {
+export default class BatVisual extends BaseObjectVisual {
 
-	constructor(state: IBat) {
-		super(state)
+	constructor(object: GameObject) {
+		super(object)
 
 		const bat11 = PIXI.Texture.from('assets/bat21.png')
 		const bat12 = PIXI.Texture.from('assets/bat22.png')
@@ -24,7 +24,7 @@ export default class BatVisual extends BaseObjectVisual<IBat> {
 	}
 
 	update(turnTimePercent: number) {
-		applyPositionAndRotation(this.view, this.state)
+		applyPositionAndRotation(this.view, this.object)
 	}
 }
 

@@ -1,57 +1,21 @@
 import Direction from 'logic/Direction'
-import SpellCharge from 'logic/SpellCharge'
-import BaseVisual from "../objects/BaseVisual";
+import {GameObject} from "./GameObject";
 
 export default interface IState {
-	viewport: {
-		changed: boolean
-		value: unknown
-	}
-	field: IFieldCell[]
-	players: IPlayer[]
-	spells: ISpell[]
-	bats: IBat[]
-	trees: ITree[]
-	doCleanUp: boolean
-}
+	// viewport: {
+	// 	changed: boolean
+	// 	value: unknown
+	// }
 
-//////////////////////////////
-// Game objects
-//////////////////////////////
+	// spells: ISpell[]
+	// bats: IBat[]
+	// trees: ITree[]
+	// waters: IWater[]
 
-export interface IMovableObject {
-	direction: Direction
-	pos: IPoint
-	size: ISize
-}
-
-export interface IPlayer extends IMovableObject {
-	id: number,
-	tintColor: number,
-	nextStepColor: number,
-	hp: number
-	moveAction: Action | undefined
-	fireSpell: boolean // todo later add type
-	destroyed: boolean
-	visual: BaseVisual
-	lastAssignedMoveTime: number
-	lastSpellTime: number
-}
-
-export interface ISpell extends IMovableObject {
-	visual: BaseVisual
-	leftMoves: number
-}
-
-export interface IBat extends IMovableObject {
-	plannedStepInDirection: number
-	visual: BaseVisual
-	hp: number
-}
-
-export interface ITree extends IMovableObject {
-	visual: BaseVisual
-	hp: number
+	// cells: IFieldCell[][]
+	//
+	objects: GameObject[]
+	players: GameObject[]
 }
 
 //////////////////////////////
@@ -68,17 +32,10 @@ export type MoveAction = {
 export type Action = TurnAction | MoveAction
 
 export interface ICell {
-	i: number
-	j: number
+	i: number // x
+	j: number // y
 }
 
-export interface ISpellCell extends ICell {
-	collided: boolean
-}
-
-export interface IFieldCell extends ICell {
-	type: unknown
-}
 
 //////////////////////////////
 // Math
