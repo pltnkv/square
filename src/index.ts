@@ -13,8 +13,7 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view)
 
 const debug = new DebugState()
-const scene = new Scene(app)
-const ctrl = new Controller(scene)
+const ctrl = new Controller(app)
 ctrl.onGameStarted()
 UserInput.init(ctrl)
 
@@ -33,6 +32,8 @@ app.ticker.add((delta) => {
 			o.update(turnTimePercent)
 		}
 	})
+
+	ctrl.scene.updateCamera()
 
 	debug.update(ctrl.state)
 })

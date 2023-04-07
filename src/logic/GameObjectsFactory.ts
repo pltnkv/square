@@ -46,7 +46,7 @@ export default class GameObjectsFactory {
 
 		object.addComponent(PositionComponentKey, new PositionComponent({
 			direction: Direction.Down,
-			size: {width: TILE_SIZE * 0.6, height: TILE_SIZE * 0.6},
+			size: {width: TILE_SIZE * 0.6, height: TILE_SIZE * 0.8},
 			pos: cellToPosition(cell),
 		}))
 

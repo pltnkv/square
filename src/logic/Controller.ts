@@ -1,9 +1,8 @@
-import IState, {ICell} from 'logic/IState'
+import IState, {IBoundingBox, ICell, IPoint, ISize} from 'logic/IState'
 import Scene from 'Scene'
 import Direction from 'logic/Direction'
 import GameFieldLayer from 'visuals/GameFieldLayer'
 import {
-	FIELD_SIZE,
 	TIME_BETWEEN_MOVES,
 	TIME_BETWEEN_SPELLS
 } from 'consts'
@@ -29,38 +28,36 @@ export default class Controller {
 	effects!: EffectsLayer
 	objectFactory: GameObjectsFactory
 
-	constructor(scene: Scene) {
-		this.scene = scene
-
-		const fieldSells = []
-		for (let i = 0; i < FIELD_SIZE; i++) {
-			for (let j = 0; j < FIELD_SIZE; j++) {
-				fieldSells.push({i, j, type: undefined})
-			}
-		}
-
+	constructor(app: PIXI.Application) {
 		this.state = {
+			canvasScale: 1,
+			canvasScaleInv: 1,
+			canvasPositionX: 0,
+			canvasPositionY: 0,
+			mapSize: {width: 0, height: 0},
 			objects: [],
 			players: []
 		}
 
+		this.scene = new Scene(app, this.state)
 		this.objectFactory = new GameObjectsFactory(this, this.state)
 	}
 
 	onGameStarted() {
-		const panel = new PanelLayer(this.state)
-		this.visuals.push(panel)
-		this.scene.stage.addChild(panel.getView())
+		this.state.mapSize = buildMap(map1, this)
 
 		const field = new GameFieldLayer(this.state)
 		this.visuals.push(field)
-		this.scene.objectsLayer.addChild(field.getView())
+		this.scene.bottomLayer.addChild(field.getView())
 
 		this.effects = new EffectsLayer()
 		this.visuals.push(this.effects)
 		this.scene.effectsLayer.addChild(this.effects.getView())
 
-		buildMap(map1, this)
+		const panel = new PanelLayer(this.state)
+		this.visuals.push(panel)
+		this.scene.stage.addChild(panel.getView())
+
 	}
 
 
@@ -70,6 +67,44 @@ export default class Controller {
 
 	onGameTick() {
 		onGameTick(this, this.state)
+		this.onCameraUpdate()
+	}
+
+	onCameraUpdate() {
+		const playerObject = getPlayer(this.state, 1)
+		const positionComp = playerObject.require(PositionComponentKey)
+		const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos)
+		const sceneSize = 900
+		const offsetForMovingBox = 200
+		const playersMovingBox: IBoundingBox = {
+			top: offsetForMovingBox,
+			left: offsetForMovingBox,
+			right: sceneSize - offsetForMovingBox,
+			bottom: sceneSize - offsetForMovingBox
+		}
+
+		const leftDiff = playersMovingBox.left - playerPosScreen.x
+		const rightDiff = playerPosScreen.x - playersMovingBox.right
+		const topDiff = playersMovingBox.top - playerPosScreen.y
+		const bottomDiff = playerPosScreen.y - playersMovingBox.bottom
+
+		const scale = 1
+		if (leftDiff > 0) {
+			this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.left
+		}
+
+		if (rightDiff > 0) {
+			this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.right
+		}
+
+		if (topDiff > 0) {
+			this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.top
+		}
+
+		if (bottomDiff > 0) {
+			this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.bottom
+		}
+
 	}
 
 	// ##########################################
@@ -110,5 +145,41 @@ export default class Controller {
 		}
 		playerComp.state.lastSpellTime = currentTime
 		spellCasterComp.state.castSpell = true
+	}
+
+	// ##########################################
+	// Utils
+	// ##########################################
+
+	getCanvasToScreenX(cnsX: number): number {
+		return cnsX * this.state.canvasScale + this.state.canvasPositionX
+	}
+
+	getCanvasToScreenY(cnsY: number): number {
+		return cnsY * this.state.canvasScale + this.state.canvasPositionY
+	}
+
+	getScreenToCanvasX(screenX: number): number {
+		return (screenX - this.state.canvasPositionX) * this.state.canvasScaleInv
+	}
+
+	getScreenToCanvasY(screenY: number): number {
+		return (screenY - this.state.canvasPositionY) * this.state.canvasScaleInv
+	}
+
+	getCanvasToScreenBB(canvasBB: IBoundingBox): IBoundingBox {
+		return {
+			left: this.getCanvasToScreenX(canvasBB.left),
+			right: this.getCanvasToScreenX(canvasBB.right),
+			top: this.getCanvasToScreenY(canvasBB.top),
+			bottom: this.getCanvasToScreenY(canvasBB.bottom),
+		}
+	}
+
+	getCanvasToScreenPoint(canvasPoint: IPoint): IPoint {
+		return {
+			x: this.getCanvasToScreenX(canvasPoint.x),
+			y: this.getCanvasToScreenY(canvasPoint.y),
+		}
 	}
 }

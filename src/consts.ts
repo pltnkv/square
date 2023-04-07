@@ -21,7 +21,6 @@ export const BAT_SPEED = 10
  */
 
 export const TILE_SIZE = 90
-export const FIELD_SIZE = 10
 export const GAME_TICK_DURATION_IN_MS = 30
 export const TIME_BETWEEN_MOVES = 50
 export const TIME_BETWEEN_SPELLS = 400

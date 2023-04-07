@@ -1,7 +1,8 @@
 import Controller from "./Controller";
 import {MapBat, MapPlayer1, MapPlayer2, MapTree, MapWater} from "../map";
+import {ISize} from "./IState";
 
-export function buildMap(map: string[][], ctrl: Controller) {
+export function buildMap(map: string[][], ctrl: Controller): ISize {
 	for (let j = 0; j < map.length; j++) {
 		const mapRow = map[j]
 		for (let i = 0; i < mapRow.length; i++) {
@@ -28,5 +29,9 @@ export function buildMap(map: string[][], ctrl: Controller) {
 					break
 			}
 		}
+	}
+	return {
+		width: map[0].length,
+		height: map.length
 	}
 }

@@ -68,6 +68,35 @@ function checkInputs(ctrl) {
     });
 }
 
+// CONCATENATED MODULE: ./src/Scene.ts
+
+class Scene {
+    constructor(app, state) {
+        this.state = state;
+        this.stage = app.stage;
+        this.cameraLayer = new pixi_es/* Container */.W2();
+        app.stage.addChild(this.cameraLayer);
+        this.bottomLayer = new pixi_es/* Container */.W2();
+        this.bottomLayer.y = 40;
+        this.cameraLayer.addChild(this.bottomLayer);
+        this.objectsLayer = new pixi_es/* Container */.W2();
+        this.objectsLayer.y = 40;
+        this.cameraLayer.addChild(this.objectsLayer);
+        this.effectsLayer = new pixi_es/* Container */.W2();
+        this.effectsLayer.y = 40;
+        this.cameraLayer.addChild(this.effectsLayer);
+        // container.x = app.screen.width / 2
+        // container.y = app.screen.height / 2
+        // container.pivot.x = container.width / 2
+        // container.pivot.y = container.height / 2
+    }
+    updateCamera() {
+        this.cameraLayer.x = this.state.canvasPositionX;
+        this.cameraLayer.y = this.state.canvasPositionY;
+        this.cameraLayer.scale.set(this.state.canvasScale);
+    }
+}
+
 // CONCATENATED MODULE: ./src/consts.ts
 //colors:
 //black 011627
@@ -91,7 +120,6 @@ export const SPELL_SPEED = 40
 export const BAT_SPEED = 10
  */
 const consts_TILE_SIZE = 90;
-const FIELD_SIZE = 10;
 const GAME_TICK_DURATION_IN_MS = 30;
 const TIME_BETWEEN_MOVES = 50;
 const TIME_BETWEEN_SPELLS = 400;
@@ -129,13 +157,17 @@ class GameFieldLayer extends BaseVisual {
         this.view = new pixi_es/* Graphics */.TC();
         const texture = pixi_es/* Texture.from */.xE.from('assets/bg_tile.png');
         //create field
-        for (let i = 0; i < FIELD_SIZE; i++) {
-            for (let j = 0; j < FIELD_SIZE; j++) {
+        for (let i = 0; i < state.mapSize.height; i++) {
+            for (let j = 0; j < state.mapSize.width; j++) {
                 const tile = new pixi_es/* Sprite */.jy(texture);
                 tile.alpha = 0.5;
                 tile.x = i * consts_TILE_SIZE;
                 tile.y = j * consts_TILE_SIZE;
                 this.view.addChild(tile);
+                this.view.beginFill(0xfdfffc);
+                this.view.lineStyle(1, 0x011627, 0.2);
+                this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
+                this.view.endFill();
             }
         }
     }
@@ -143,16 +175,6 @@ class GameFieldLayer extends BaseVisual {
         return this.view;
     }
     update() {
-        this.view.clear();
-        //create field
-        for (let i = 0; i < FIELD_SIZE; i++) {
-            for (let j = 0; j < FIELD_SIZE; j++) {
-                this.view.beginFill(0xfdfffc);
-                this.view.lineStyle(1, 0x011627, 1);
-                this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
-                this.view.endFill();
-            }
-        }
     }
 }
 
@@ -526,7 +548,8 @@ const MapWater = w;
 const MapBat = b;
 const MapPlayer1 = p;
 const MapPlayer2 = P;
-const map1 = [
+/*
+export const map1 = [
     [p, o, o, o, P, o, o, o, o, o],
     [o, o, t, o, o, o, o, t, t, b],
     [o, o, t, t, b, o, o, o, t, o],
@@ -537,6 +560,23 @@ const map1 = [
     [o, o, b, o, w, w, t, o, o, o],
     [o, o, o, w, w, b, o, o, o, o],
     [o, o, w, w, w, o, o, o, o, o],
+]
+*/
+const map1 = [
+    [p, o, o, o, P, o, o, o, o, o, o, o, o, o, o],
+    [o, o, t, o, o, o, o, t, t, b, o, o, o, o, o],
+    [o, o, t, t, b, o, o, o, t, o, o, o, o, o, o],
+    [o, o, o, t, t, o, o, o, o, o, o, o, o, o, o],
+    [o, o, o, o, o, o, o, o, o, o, o, o, o, o, o],
+    [o, o, o, o, o, t, t, t, o, o, o, o, o, o, o],
+    [o, o, o, o, o, w, w, o, o, o, o, o, o, o, o],
+    [o, o, b, o, w, w, t, o, o, o, o, o, o, o, o],
+    [o, o, o, w, w, b, o, o, o, o, o, o, o, o, o],
+    [o, o, w, w, w, o, o, o, o, o, o, o, o, o, o],
+    [o, o, w, w, w, o, o, o, o, o, o, o, o, o, o],
+    [o, o, w, w, o, o, o, o, o, o, o, o, o, o, o],
+    [o, o, w, o, o, o, o, o, o, o, o, o, o, o, o],
+    [o, w, w, o, o, o, o, o, o, o, o, o, o, o, o],
 ];
 
 // CONCATENATED MODULE: ./src/logic/MapBuilder.ts
@@ -569,6 +609,10 @@ function buildMap(map, ctrl) {
             }
         }
     }
+    return {
+        width: map[0].length,
+        height: map.length
+    };
 }
 
 // CONCATENATED MODULE: ./src/utils/moveUtils.ts
@@ -911,7 +955,7 @@ class GameObjectsFactory {
         }));
         object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
             direction: logic_Direction.Down,
-            size: { width: consts_TILE_SIZE * 0.6, height: consts_TILE_SIZE * 0.6 },
+            size: { width: consts_TILE_SIZE * 0.6, height: consts_TILE_SIZE * 0.8 },
             pos: cellToPosition(cell),
         }));
         object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
@@ -1095,39 +1139,70 @@ class GameObjectsFactory {
 
 
 
+
 class Controller {
-    constructor(scene) {
+    constructor(app) {
         this.visuals = [];
-        this.scene = scene;
-        const fieldSells = [];
-        for (let i = 0; i < FIELD_SIZE; i++) {
-            for (let j = 0; j < FIELD_SIZE; j++) {
-                fieldSells.push({ i, j, type: undefined });
-            }
-        }
         this.state = {
+            canvasScale: 1,
+            canvasScaleInv: 1,
+            canvasPositionX: 0,
+            canvasPositionY: 0,
+            mapSize: { width: 0, height: 0 },
             objects: [],
             players: []
         };
+        this.scene = new Scene(app, this.state);
         this.objectFactory = new GameObjectsFactory(this, this.state);
     }
     onGameStarted() {
-        const panel = new PanelLayer(this.state);
-        this.visuals.push(panel);
-        this.scene.stage.addChild(panel.getView());
+        this.state.mapSize = buildMap(map1, this);
         const field = new GameFieldLayer(this.state);
         this.visuals.push(field);
-        this.scene.objectsLayer.addChild(field.getView());
+        this.scene.bottomLayer.addChild(field.getView());
         this.effects = new EffectsLayer();
         this.visuals.push(this.effects);
         this.scene.effectsLayer.addChild(this.effects.getView());
-        buildMap(map1, this);
+        const panel = new PanelLayer(this.state);
+        this.visuals.push(panel);
+        this.scene.stage.addChild(panel.getView());
     }
     //////////////////////////////////////////////////////////
     // GAME LOOP
     //////////////////////////////////////////////////////////
     onGameTick() {
         onGameTick(this, this.state);
+        this.onCameraUpdate();
+    }
+    onCameraUpdate() {
+        const playerObject = getPlayer(this.state, 1);
+        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
+        const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos);
+        const sceneSize = 900;
+        const offsetForMovingBox = 200;
+        const playersMovingBox = {
+            top: offsetForMovingBox,
+            left: offsetForMovingBox,
+            right: sceneSize - offsetForMovingBox,
+            bottom: sceneSize - offsetForMovingBox
+        };
+        const leftDiff = playersMovingBox.left - playerPosScreen.x;
+        const rightDiff = playerPosScreen.x - playersMovingBox.right;
+        const topDiff = playersMovingBox.top - playerPosScreen.y;
+        const bottomDiff = playerPosScreen.y - playersMovingBox.bottom;
+        const scale = 1;
+        if (leftDiff > 0) {
+            this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.left;
+        }
+        if (rightDiff > 0) {
+            this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.right;
+        }
+        if (topDiff > 0) {
+            this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.top;
+        }
+        if (bottomDiff > 0) {
+            this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.bottom;
+        }
     }
     // ##########################################
     // Inputs processing
@@ -1164,23 +1239,34 @@ class Controller {
         playerComp.state.lastSpellTime = currentTime;
         spellCasterComp.state.castSpell = true;
     }
-}
-
-// CONCATENATED MODULE: ./src/Scene.ts
-
-class Scene {
-    constructor(app) {
-        this.stage = app.stage;
-        this.objectsLayer = new pixi_es/* Container */.W2();
-        this.objectsLayer.y = 40;
-        app.stage.addChild(this.objectsLayer);
-        this.effectsLayer = new pixi_es/* Container */.W2();
-        this.effectsLayer.y = 40;
-        app.stage.addChild(this.effectsLayer);
-        // container.x = app.screen.width / 2
-        // container.y = app.screen.height / 2
-        // container.pivot.x = container.width / 2
-        // container.pivot.y = container.height / 2
+    // ##########################################
+    // Utils
+    // ##########################################
+    getCanvasToScreenX(cnsX) {
+        return cnsX * this.state.canvasScale + this.state.canvasPositionX;
+    }
+    getCanvasToScreenY(cnsY) {
+        return cnsY * this.state.canvasScale + this.state.canvasPositionY;
+    }
+    getScreenToCanvasX(screenX) {
+        return (screenX - this.state.canvasPositionX) * this.state.canvasScaleInv;
+    }
+    getScreenToCanvasY(screenY) {
+        return (screenY - this.state.canvasPositionY) * this.state.canvasScaleInv;
+    }
+    getCanvasToScreenBB(canvasBB) {
+        return {
+            left: this.getCanvasToScreenX(canvasBB.left),
+            right: this.getCanvasToScreenX(canvasBB.right),
+            top: this.getCanvasToScreenY(canvasBB.top),
+            bottom: this.getCanvasToScreenY(canvasBB.bottom),
+        };
+    }
+    getCanvasToScreenPoint(canvasPoint) {
+        return {
+            x: this.getCanvasToScreenX(canvasPoint.x),
+            y: this.getCanvasToScreenY(canvasPoint.y),
+        };
     }
 }
 
@@ -1228,14 +1314,12 @@ function controls_init(app) {
 
 
 
-
 const app = new pixi_es/* Application */.Mx({
     width: 920, height: 950, backgroundColor: 0x222222, resolution: 1,
 });
 document.body.appendChild(app.view);
 const debug = new DebugState();
-const scene = new Scene(app);
-const ctrl = new Controller(scene);
+const ctrl = new Controller(app);
 ctrl.onGameStarted();
 init(ctrl);
 let prevTurnTime = Date.now();
@@ -1252,6 +1336,7 @@ app.ticker.add((delta) => {
             o.update(turnTimePercent);
         }
     });
+    ctrl.scene.updateCamera();
     debug.update(ctrl.state);
 });
 controls_init(app);

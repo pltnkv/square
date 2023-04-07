@@ -13,7 +13,12 @@ export default interface IState {
 	// waters: IWater[]
 
 	// cells: IFieldCell[][]
-	//
+
+	canvasScale: number
+	canvasScaleInv: number
+	canvasPositionX: number,
+	canvasPositionY: number,
+	mapSize: ISize
 	objects: GameObject[]
 	players: GameObject[]
 }
