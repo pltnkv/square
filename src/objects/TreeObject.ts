@@ -8,6 +8,7 @@ import {PositionComponentKey} from "../components/PositionComponent";
 import TreeVisual from "../visuals/objects/TreeVisual";
 import {GameObject} from "../logic/GameObject";
 import Controller from "../logic/Controller";
+import {DestroyableByEarthComponent, DestroyableByEarthComponentKey} from "../components/DestroyableByEarthComponent";
 
 export class TreeObject extends GameObject {
 	constructor(ctrl: Controller, initCell: ICell) {
@@ -24,14 +25,18 @@ export class TreeObject extends GameObject {
 			impactDistance: 2,
 		}))
 
+		this.addComponent(DestroyableByEarthComponentKey, new DestroyableByEarthComponent({
+			allowedEarthTypes: [EarthType.Regular, EarthType.Forest]
+		}))
+
 		this.addComponent(HPComponentKey, new HPComponent({
 				hp: 3,
 			},
-			(object) => {
+			() => {
 				//todo how to run different animation depending on spell type
-				this.ctrl.effects.showFire(object.require(PositionComponentKey).state.pos)
+				this.ctrl.effects.showFire(this.require(PositionComponentKey).state.pos)
 			},
-			(object) => {
+			() => {
 				this.destroyObject()
 			}
 		))

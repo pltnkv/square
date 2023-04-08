@@ -15,6 +15,7 @@ import {findCellToTransform, isBBsOverlaps, posAndSizeToBoundingBox, positionToC
 import {EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
 import EarthType from "./EarthType";
 import {getPlayer} from "../utils/stateUtils";
+import {DestroyableByEarthComponentKey} from "../components/DestroyableByEarthComponent";
 
 /**
  * modify state only here
@@ -46,7 +47,21 @@ export function onGameTick(ctrl: Controller, state: IState) {
 			spellCaster.state.castSpell = false
 		}
 
-		//transform earth
+		// check that object can exist on his type of earth
+		const destroyableByEarthComponent = object.as(DestroyableByEarthComponentKey)
+		if(destroyableByEarthComponent) {
+			// todo может мне добавить кеш на основные функции поика? и сбрасывать его в конце каждого тика?
+			const cell = positionToCell(object.require(PositionComponentKey).state.pos)
+			const earthType = getEarthByCell(state.earthCells, cell)?.type
+			if(earthType) {
+				if(!destroyableByEarthComponent.state.allowedEarthTypes.includes(earthType)) {
+					object.require(HPComponentKey).reduceHP()
+				}
+			}
+		}
+
+
+		// transform earth
 		const earthTransformer = object.as(EarthTransformerComponentKey)
 		if (earthTransformer) {
 			const centerCell = positionToCell(object.require(PositionComponentKey).state.pos)
@@ -130,13 +145,7 @@ export function onGameTick(ctrl: Controller, state: IState) {
 function tryReduceHP(object: GameObject) {
 	const objectHPComp = object.as(HPComponentKey)
 	if (objectHPComp) {
-		objectHPComp.state.hp--
-		if (objectHPComp.state.hp > 0) {
-			objectHPComp.onDamaged(object)
-		} else {
-			objectHPComp.onDamaged(object)
-			objectHPComp.onDestroyed(object)
-		}
+		objectHPComp.reduceHP()
 	}
 }
 
@@ -208,7 +217,10 @@ function iterateEarthCellsFromCenter(earthCells: IEarthCell[][], centerCell: ICe
 	}
 }
 
-
 function calcDistanceBetweenCells(c1: ICell, c2: ICell):number {
 	return Math.abs(c1.i - c2.i) + Math.abs(c1.j - c2.j)
+}
+
+function getEarthByCell(earthCells: IEarthCell[][], cell:ICell): IEarthCell | undefined {
+	return earthCells[cell.j] && earthCells[cell.j][cell.i]
 }

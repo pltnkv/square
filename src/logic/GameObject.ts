@@ -10,12 +10,14 @@ import {MovableComponent, MovableComponentKey} from "../components/MovableCompon
 import {EnemyComponent, EnemyComponentKey} from "../components/EnemyComponent";
 import {SpellableComponent, SpellableComponentKey} from "../components/SpellableComponent";
 import {EarthTransformerComponent, EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
+import {DestroyableByEarthComponent, DestroyableByEarthComponentKey} from "../components/DestroyableByEarthComponent";
 import {ICell} from "./IState";
 import Direction from "./Direction";
 import {cellToPosition} from "../utils/mathUtils";
 import {TILE_SIZE} from "../consts";
 import BaseVisual from "../visuals/BaseVisual";
 import Controller from "./Controller";
+import {BaseComponent} from "../components/BaseComponent";
 
 type ComponentByKey = {
 	[BatComponentKey]: BatComponent
@@ -31,11 +33,12 @@ type ComponentByKey = {
 	[ObstacleComponentKey]: ObstacleComponent
 	[EnemyComponentKey]: EnemyComponent
 	[EarthTransformerComponentKey]: EarthTransformerComponent
+	[DestroyableByEarthComponentKey]: DestroyableByEarthComponent
 }
 
 export class GameObject {
 
-	private components = new Map()
+	components = new Map()
 
 	constructor(protected ctrl:Controller) {
 	}
@@ -59,6 +62,8 @@ export class GameObject {
 		}
 		return comp
 	}
+
+
 
 	////////////////////////////////////////////////
 	//// HELPERS

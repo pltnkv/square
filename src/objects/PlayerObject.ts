@@ -61,10 +61,10 @@ export class PlayerObject extends GameObject {
 		this.addComponent(HPComponentKey, new HPComponent({
 				hp: MAX_PLAYER_HP,
 			},
-			(object) => {
+			() => {
 				//todo
 			},
-			(object) => {
+			() => {
 				//todo
 			}
 		))

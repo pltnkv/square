@@ -80,10 +80,10 @@ export class BatObject extends GameObject {
 		this.addComponent(HPComponentKey, new HPComponent({
 				hp: 1,
 			},
-			(object) => {
+			() => {
 				//todo
 			},
-			(object) => {
+			() => {
 				this.destroyObject()
 			}
 		))

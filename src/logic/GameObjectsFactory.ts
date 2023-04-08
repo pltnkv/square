@@ -9,6 +9,7 @@ import {WaterObject} from "../objects/WaterObject";
 import {PlayerObject} from "../objects/PlayerObject";
 import {BatObject} from "../objects/BatObject";
 import {SpellObject} from "../objects/SpellObject";
+import {BaseComponent} from "../components/BaseComponent";
 
 export default class GameObjectsFactory {
 
@@ -17,6 +18,14 @@ export default class GameObjectsFactory {
 
 	private registerObject(object: GameObject): GameObject {
 		this.state.objects.push(object)
+		//todo add dependencies for all existing components
+		object.components.forEach((component: BaseComponent<any>, compKey) => {
+			component.dependencies.forEach((dependencyComponentKey: string) => {
+				if (!object.components.has(dependencyComponentKey)) {
+					throw new Error(`Component "${compKey}" depends on "${dependencyComponentKey}" but it is not added to object "${object.constructor.name}"`)
+				}
+			})
+		})
 		return object
 	}
 

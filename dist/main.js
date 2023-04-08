@@ -1,6 +1,6 @@
 (self["webpackChunksquare"] = self["webpackChunksquare"] || []).push([[179],{
 
-/***/ 790:
+/***/ 467:
 /***/ ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -267,7 +267,11 @@ class EffectsLayer extends BaseVisual {
 }
 
 // CONCATENATED MODULE: ./src/components/BaseComponent.ts
+const defaultDependencies = [];
 class BaseComponent {
+    constructor() {
+        this.dependencies = defaultDependencies;
+    }
 }
 
 // CONCATENATED MODULE: ./src/components/SpellCasterComponent.ts
@@ -301,6 +305,28 @@ class HPComponent extends BaseComponent {
         this.state = state;
         this.onDamaged = onDamaged;
         this.onDestroyed = onDestroyed;
+    }
+    reduceHP(amount = 1) {
+        if (amount <= 0) {
+            throw new Error('amount must be > 0');
+        }
+        if (this.state.hp > 0) {
+            this.state.hp -= amount;
+            if (this.state.hp <= 0) {
+                this.onDamaged();
+                this.onDestroyed();
+            }
+            else {
+                this.onDamaged();
+            }
+        }
+    }
+    kill() {
+        if (this.state.hp > 0) {
+            this.state.hp = 0;
+            this.onDamaged();
+            this.onDestroyed();
+        }
     }
 }
 
@@ -593,7 +619,21 @@ class EarthTransformerComponent extends BaseComponent {
     }
 }
 
+// CONCATENATED MODULE: ./src/components/DestroyableByEarthComponent.ts
+
+
+
+const DestroyableByEarthComponentKey = 'DestroyableByEarth';
+class DestroyableByEarthComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+        this.dependencies = [HPComponentKey, PositionComponentKey];
+    }
+}
+
 // CONCATENATED MODULE: ./src/logic/GameLoopLogic.ts
+
 
 
 
@@ -621,6 +661,7 @@ function onGameTick(ctrl, state) {
     ////////////////////////////////////////////////
     //toto iterate only over objects with MovableComponent
     state.objects.forEach(object => {
+        var _a;
         // Move object
         const movable = object.as(MovableComponentKey);
         if (movable) {
@@ -632,7 +673,19 @@ function onGameTick(ctrl, state) {
             spellCaster.onCreateSpell(object);
             spellCaster.state.castSpell = false;
         }
-        //transform earth
+        // check that object can exist on his type of earth
+        const destroyableByEarthComponent = object.as(DestroyableByEarthComponentKey);
+        if (destroyableByEarthComponent) {
+            // todo может мне добавить кеш на основные функции поика? и сбрасывать его в конце каждого тика?
+            const cell = positionToCell(object.require(PositionComponentKey).state.pos);
+            const earthType = (_a = getEarthByCell(state.earthCells, cell)) === null || _a === void 0 ? void 0 : _a.type;
+            if (earthType) {
+                if (!destroyableByEarthComponent.state.allowedEarthTypes.includes(earthType)) {
+                    object.require(HPComponentKey).reduceHP();
+                }
+            }
+        }
+        // transform earth
         const earthTransformer = object.as(EarthTransformerComponentKey);
         if (earthTransformer) {
             const centerCell = positionToCell(object.require(PositionComponentKey).state.pos);
@@ -708,14 +761,7 @@ function onGameTick(ctrl, state) {
 function tryReduceHP(object) {
     const objectHPComp = object.as(HPComponentKey);
     if (objectHPComp) {
-        objectHPComp.state.hp--;
-        if (objectHPComp.state.hp > 0) {
-            objectHPComp.onDamaged(object);
-        }
-        else {
-            objectHPComp.onDamaged(object);
-            objectHPComp.onDestroyed(object);
-        }
+        objectHPComp.reduceHP();
     }
 }
 function hasCollisionsWithObstacles(object, targetPos, objects) {
@@ -781,6 +827,9 @@ function iterateEarthCellsFromCenter(earthCells, centerCell, distance, callback)
 }
 function GameLoopLogic_calcDistanceBetweenCells(c1, c2) {
     return Math.abs(c1.i - c2.i) + Math.abs(c1.j - c2.j);
+}
+function getEarthByCell(earthCells, cell) {
+    return earthCells[cell.j] && earthCells[cell.j][cell.i];
 }
 
 // CONCATENATED MODULE: ./src/components/PlayerComponent.ts
@@ -1011,6 +1060,7 @@ class VisualComponent extends BaseComponent {
 
 
 
+
 class GameObject {
     constructor(ctrl) {
         this.ctrl = ctrl;
@@ -1080,6 +1130,7 @@ class GameObject {
 
 
 
+
 class TreeObject extends GameObject {
     constructor(ctrl, initCell) {
         super(ctrl);
@@ -1090,12 +1141,15 @@ class TreeObject extends GameObject {
             earthType: logic_EarthType.Forest,
             impactDistance: 2,
         }));
+        this.addComponent(DestroyableByEarthComponentKey, new DestroyableByEarthComponent({
+            allowedEarthTypes: [logic_EarthType.Regular, logic_EarthType.Forest]
+        }));
         this.addComponent(HPComponentKey, new HPComponent({
             hp: 3,
-        }, (object) => {
+        }, () => {
             //todo how to run different animation depending on spell type
-            this.ctrl.effects.showFire(object.require(PositionComponentKey).state.pos);
-        }, (object) => {
+            this.ctrl.effects.showFire(this.require(PositionComponentKey).state.pos);
+        }, () => {
             this.destroyObject();
         }));
         this.addVisual(TreeVisual);
@@ -1264,9 +1318,9 @@ class PlayerObject extends GameObject {
         }));
         this.addComponent(HPComponentKey, new HPComponent({
             hp: MAX_PLAYER_HP,
-        }, (object) => {
+        }, () => {
             //todo
-        }, (object) => {
+        }, () => {
             //todo
         }));
         this.addComponent(SpellCasterComponentKey, new SpellCasterComponent({
@@ -1365,9 +1419,9 @@ class BatObject extends GameObject {
         }));
         this.addComponent(HPComponentKey, new HPComponent({
             hp: 1,
-        }, (object) => {
+        }, () => {
             //todo
-        }, (object) => {
+        }, () => {
             this.destroyObject();
         }));
         this.addComponent(EnemyComponentKey, new EnemyComponent({
@@ -1432,14 +1486,13 @@ class SpellObject extends GameObject {
             }
             else {
                 // spell is dead
-                this.require(HPComponentKey).state.hp = 0;
+                this.require(HPComponentKey).kill();
             }
         }));
         this.addComponent(HPComponentKey, new HPComponent({
             hp: 1,
-        }, (object) => {
-        }, (object) => {
-            const positionComp = object.require(PositionComponentKey);
+        }, () => { }, () => {
+            const positionComp = this.require(PositionComponentKey);
             this.ctrl.effects.showExplosion(positionComp.state.pos);
             this.destroyObject();
         }));
@@ -1462,6 +1515,14 @@ class GameObjectsFactory {
     }
     registerObject(object) {
         this.state.objects.push(object);
+        //todo add dependencies for all existing components
+        object.components.forEach((component, compKey) => {
+            component.dependencies.forEach((dependencyComponentKey) => {
+                if (!object.components.has(dependencyComponentKey)) {
+                    throw new Error(`Component "${compKey}" depends on "${dependencyComponentKey}" but it is not added to object "${object.constructor.name}"`);
+                }
+            });
+        });
         return object;
     }
     setEarthType(cell, type) {
@@ -1769,4 +1830,4 @@ controls_init(app, ctrl);
 /***/ })
 
 },
-0,[[790,666,244]]]);
+0,[[467,666,244]]]);

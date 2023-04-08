@@ -36,17 +36,16 @@ export class SpellObject extends GameObject {
 					positionComp.calcBoundingBox()
 				} else {
 					// spell is dead
-					this.require(HPComponentKey).state.hp = 0
+					this.require(HPComponentKey).kill()
 				}
 			}))
 
 		this.addComponent(HPComponentKey, new HPComponent({
 				hp: 1,
 			},
-			(object) => {
-			},
-			(object) => {
-				const positionComp = object.require(PositionComponentKey)
+			() => {},
+			() => {
+				const positionComp = this.require(PositionComponentKey)
 				this.ctrl.effects.showExplosion(positionComp.state.pos)
 				this.destroyObject()
 			}
