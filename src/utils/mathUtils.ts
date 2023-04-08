@@ -245,3 +245,7 @@ function getCellsAround(centerCell: ICell, offset: number, earthSells: IEarthCel
 	}
 	return undefined
 }
+
+function calcDistanceBetweenCells(from: ICell, to: ICell): number {
+	return Math.sqrt(Math.pow(from.i - to.i, 2) + Math.pow(from.j - to.j, 2))
+}

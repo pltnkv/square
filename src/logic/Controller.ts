@@ -1,4 +1,4 @@
-import IState, {IBoundingBox, ICell, IPoint, ISize} from 'logic/IState'
+import IState, {IBoundingBox, ICell, IEarthCell, IPoint, ISize} from 'logic/IState'
 import Scene from 'Scene'
 import Direction from 'logic/Direction'
 import GameFieldLayer from 'visuals/GameFieldLayer'
@@ -19,6 +19,8 @@ import {PlayerComponentKey} from "../components/PlayerComponent";
 import {SpellCasterComponentKey} from "../components/SpellCasterComponent";
 import GameObjectsFactory from "./GameObjectsFactory";
 import {PositionComponentKey} from "../components/PositionComponent";
+import {GameObject} from "./GameObject";
+import {isPointInsideBB, positionToCell} from "../utils/mathUtils";
 
 export default class Controller {
 
@@ -172,6 +174,26 @@ export default class Controller {
 	// ##########################################
 	// Utils
 	// ##########################################
+
+	getObjectsByPoint(point: IPoint): GameObject[] {
+		return this.state.objects.filter(obj => {
+			const positionComp = obj.as(PositionComponentKey)
+			if (positionComp) {
+				return isPointInsideBB(point, positionComp.state.boundingBox)
+			} else {
+				return false
+			}
+		})
+	}
+
+	getEarthCellByPoint(point: IPoint): IEarthCell | undefined {
+		try {
+			const cell = positionToCell(point)
+			return this.state.earthCells[cell.j][cell.i]
+		} catch (e) {
+			return undefined
+		}
+	}
 
 	getCanvasToScreenX(cnsX: number): number {
 		return cnsX * this.state.canvasScale + this.state.canvasPositionX

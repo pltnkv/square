@@ -20,6 +20,7 @@ export default class GameFieldLayer extends BaseVisual {
 		this.tilesType = {
 			[EarthType.Regular]: PIXI.Texture.from('assets/bg_regular.png'),
 			[EarthType.Lava]: PIXI.Texture.from('assets/bg_lava.jpg'),
+			[EarthType.Forest]: PIXI.Texture.from('assets/bg_forest.png'),
 		}
 
 		for (let j = 0; j < this.state.earthCells.length; j++) {

@@ -1,7 +1,8 @@
 enum EarthType {
-	Regular = 0,
-	Lava = 1,
-	Magic = 2,
+	Regular = 'Regular',
+	Lava = 'Lava',
+	Forest = 'Forest',
+	Magic = 'Magic',
 }
 
 export default EarthType

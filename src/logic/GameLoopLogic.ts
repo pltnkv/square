@@ -1,5 +1,5 @@
 import Controller from "./Controller";
-import IState, {IPoint} from "./IState";
+import IState, {ICell, IEarthCell, IPoint} from "./IState";
 import {TILE_SIZE} from "../consts";
 import Direction from "./Direction";
 import {SpellCasterComponentKey} from "../components/SpellCasterComponent";
@@ -13,6 +13,8 @@ import {PositionComponentKey} from "../components/PositionComponent";
 import {ObstacleComponentKey} from "../components/ObstacleComponent";
 import {findCellToTransform, isBBsOverlaps, posAndSizeToBoundingBox, positionToCell} from "../utils/mathUtils";
 import {EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
+import EarthType from "./EarthType";
+import {getPlayer} from "../utils/stateUtils";
 
 /**
  * modify state only here
@@ -44,14 +46,40 @@ export function onGameTick(ctrl: Controller, state: IState) {
 			spellCaster.state.castSpell = false
 		}
 
+		//transform earth
 		const earthTransformer = object.as(EarthTransformerComponentKey)
-		if(earthTransformer) {
+		if (earthTransformer) {
 			const centerCell = positionToCell(object.require(PositionComponentKey).state.pos)
-			const cellToTransform = findCellToTransform(centerCell, earthTransformer.state.earthType, state.earthCells)
-			if(cellToTransform) {
-				state.earthCells[cellToTransform.j][cellToTransform.i].type = earthTransformer.state.earthType
+			iterateEarthCellsFromCenter(state.earthCells, centerCell, earthTransformer.state.impactDistance, (cell) => {
+				const distance = calcDistanceBetweenCells(centerCell, cell) || 1 // prevent division by zero
+				const impact = earthTransformer.state.impactDistance / distance
+				const earthType = earthTransformer.state.earthType
+				if (cell.impactingTransformers[earthType] === undefined) {
+					cell.impactingTransformers[earthType] = impact
+				} else {
+					// @ts-ignore
+					cell.impactingTransformers[earthType] += impact
+				}
+			})
+		}
+	})
+
+	// calculate types of earth cells
+	const MIN_IMPACT = 0.2
+	iterateAllEarthCells(state.earthCells, (cell) => {
+		let biggest = MIN_IMPACT
+		for (const tKey in cell.impactingTransformers) {
+			const val = cell.impactingTransformers[tKey as EarthType]
+			if (val && val > biggest) {
+				biggest = val
+				cell.type = tKey as EarthType
 			}
 		}
+		// no impacting transformers
+		if (biggest === MIN_IMPACT) {
+			cell.type = EarthType.Regular
+		}
+		cell.impactingTransformers = {}
 	})
 
 
@@ -106,6 +134,7 @@ function tryReduceHP(object: GameObject) {
 		if (objectHPComp.state.hp > 0) {
 			objectHPComp.onDamaged(object)
 		} else {
+			objectHPComp.onDamaged(object)
 			objectHPComp.onDestroyed(object)
 		}
 	}
@@ -151,3 +180,35 @@ function hasCollisionInObjects(obj1: GameObject, obj2: GameObject): boolean {
 	return isBBsOverlaps(pos1.state.boundingBox, pos2.state.boundingBox)
 }
 
+function iterateAllEarthCells(earthCells: IEarthCell[][], callback: (cell: IEarthCell) => boolean | void): void {
+	for (let j = 0; j < earthCells.length; j++) {
+		for (let i = 0; i < earthCells[j].length; i++) {
+			const cell = earthCells[j][i]
+			if (callback(cell)) {
+				return
+			}
+		}
+	}
+}
+
+function iterateEarthCellsFromCenter(earthCells: IEarthCell[][], centerCell: ICell, distance: number, callback: (cell: IEarthCell) => boolean | void): void {
+	for (let j = -distance; j <= distance; j++) {
+		const row = earthCells[centerCell.j + j]
+		if (row) {
+			for (let i = -distance; i <= distance; i++) {
+				const cell = row[centerCell.i + i]
+				if (cell) {
+					if (callback(cell)) {
+						return
+					}
+				}
+
+			}
+		}
+	}
+}
+
+
+function calcDistanceBetweenCells(c1: ICell, c2: ICell):number {
+	return Math.abs(c1.i - c2.i) + Math.abs(c1.j - c2.j)
+}

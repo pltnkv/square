@@ -17,16 +17,16 @@ export default class Scene {
 		app.stage.addChild(this.cameraLayer)
 
 		this.bottomLayer = new PIXI.Container()
-		this.bottomLayer.y = 40
+		// this.bottomLayer.y = 40
 		this.cameraLayer.addChild(this.bottomLayer)
 
 		this.objectsLayer = new PIXI.Container()
-		this.objectsLayer.y = 40
+		// this.objectsLayer.y = 40
 		this.cameraLayer.addChild(this.objectsLayer)
 
 
 		this.effectsLayer =  new PIXI.Container()
-		this.effectsLayer.y = 40
+		// this.effectsLayer.y = 40
 		this.cameraLayer.addChild(this.effectsLayer)
 
 		// container.x = app.screen.width / 2

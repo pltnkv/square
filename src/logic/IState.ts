@@ -31,7 +31,8 @@ export default interface IState {
 
 export type IEarthCell = {
 	type: EarthType
-}
+	impactingTransformers: {[x in EarthType]?: number}
+} & ICell
 
 export type TurnAction = {
 	type: 'turn'

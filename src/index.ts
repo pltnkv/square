@@ -11,7 +11,7 @@ const app = new PIXI.Application({
 })
 document.body.appendChild(app.view)
 
-const debug = new DebugState()
+const debug = new DebugState(app.view)
 const ctrl = new Controller(app)
 ctrl.onGameStarted()
 UserInput.init(ctrl)
@@ -34,7 +34,7 @@ app.ticker.add((delta) => {
 
 	ctrl.scene.updateCamera()
 
-	debug.update(ctrl.state)
+	debug.update(ctrl)
 })
 
 controls.init(app, ctrl)

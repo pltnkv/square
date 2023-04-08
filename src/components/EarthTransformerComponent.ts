@@ -4,6 +4,7 @@ import EarthType from "../logic/EarthType";
 
 export type IEarthTransformerComponentState = {
 	earthType: EarthType
+	impactDistance: number
 }
 
 export const EarthTransformerComponentKey = 'EarthTransformer'

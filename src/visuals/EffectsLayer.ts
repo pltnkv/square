@@ -29,6 +29,26 @@ export default class EffectsLayer extends BaseVisual {
 		// bat.tint = 0xff0000
 	}
 
+	showFire(pos: IPoint) {
+		const textures = []
+		for (let i = 1; i < 9; i++) {
+			textures.push(PIXI.Texture.from(`assets/fire/fire_${i}.png`))
+		}
+
+		const explosion = new PIXI.AnimatedSprite(textures)
+		explosion.animationSpeed = 0.2
+		explosion.x = pos.x
+		explosion.y = pos.y
+		explosion.anchor.set(0.5)
+		explosion.scale.set(0.3)
+		explosion.gotoAndPlay(0)
+		explosion.loop = false
+		explosion.onComplete = () => {
+			this.view.removeChild(explosion)
+		}
+		this.view.addChild(explosion)
+	}
+
 	getView() {
 		return this.view
 	}

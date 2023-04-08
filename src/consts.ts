@@ -33,9 +33,10 @@ export const MAX_PLAYER_HP = 3
 export const SPELL_LIFESPAN = 100
 export const MAX_BAT_STEPS_IN_LINE = 30
 
+// export const PLAYER_SPEED = 30
 export const PLAYER_SPEED = 10
 export const SPELL_SPEED = 20
 export const BAT_SPEED = 4
 
 export const DEBUG_SIZES = false
-export const DEBUG_STATE = false
+export const DEBUG_STATE = true
