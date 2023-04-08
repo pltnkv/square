@@ -3,6 +3,8 @@ import Scene from 'Scene'
 import Direction from 'logic/Direction'
 import GameFieldLayer from 'visuals/GameFieldLayer'
 import {
+	APP_HEIGHT,
+	APP_WIDTH,
 	TIME_BETWEEN_MOVES,
 	TIME_BETWEEN_SPELLS
 } from 'consts'
@@ -36,7 +38,8 @@ export default class Controller {
 			canvasPositionY: 0,
 			mapSize: {width: 0, height: 0},
 			objects: [],
-			players: []
+			players: [],
+			earthCells: []
 		}
 
 		this.scene = new Scene(app, this.state)
@@ -54,9 +57,9 @@ export default class Controller {
 		this.visuals.push(this.effects)
 		this.scene.effectsLayer.addChild(this.effects.getView())
 
-		const panel = new PanelLayer(this.state)
-		this.visuals.push(panel)
-		this.scene.stage.addChild(panel.getView())
+		// const panel = new PanelLayer(this.state)
+		// this.visuals.push(panel)
+		// this.scene.stage.addChild(panel.getView())
 
 	}
 
@@ -76,35 +79,54 @@ export default class Controller {
 		const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos)
 		const sceneSize = 900
 		const offsetForMovingBox = 200
-		const playersMovingBox: IBoundingBox = {
+		const playersScreenBox: IBoundingBox = {
 			top: offsetForMovingBox,
 			left: offsetForMovingBox,
 			right: sceneSize - offsetForMovingBox,
 			bottom: sceneSize - offsetForMovingBox
 		}
 
-		const leftDiff = playersMovingBox.left - playerPosScreen.x
-		const rightDiff = playerPosScreen.x - playersMovingBox.right
-		const topDiff = playersMovingBox.top - playerPosScreen.y
-		const bottomDiff = playerPosScreen.y - playersMovingBox.bottom
+		const leftDiff = playersScreenBox.left - playerPosScreen.x
+		const rightDiff = playerPosScreen.x - playersScreenBox.right
+		const topDiff = playersScreenBox.top - playerPosScreen.y
+		const bottomDiff = playerPosScreen.y - playersScreenBox.bottom
 
-		const scale = 1
 		if (leftDiff > 0) {
-			this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.left
+			this.state.canvasPositionX = -positionComp.state.pos.x * this.state.canvasScale + playersScreenBox.left
 		}
 
 		if (rightDiff > 0) {
-			this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.right
+			this.state.canvasPositionX = -positionComp.state.pos.x * this.state.canvasScale + playersScreenBox.right
 		}
 
 		if (topDiff > 0) {
-			this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.top
+			this.state.canvasPositionY = -positionComp.state.pos.y * this.state.canvasScale + playersScreenBox.top
 		}
 
 		if (bottomDiff > 0) {
-			this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.bottom
+			this.state.canvasPositionY = -positionComp.state.pos.y * this.state.canvasScale + playersScreenBox.bottom
 		}
 
+	}
+
+	zoomIn() {
+		this.state.canvasScale *= 1.1
+		this.updateZoom()
+	}
+
+	zoomOut() {
+		this.state.canvasScale /= 1.1
+		this.updateZoom()
+	}
+
+	private updateZoom() {
+		this.state.canvasScaleInv = 1 / this.state.canvasScale
+
+		const playerObject = getPlayer(this.state, 1)
+		const playerPosComp = playerObject.require(PositionComponentKey)
+
+		this.state.canvasPositionX = -playerPosComp.state.pos.x * this.state.canvasScale + APP_WIDTH / 2
+		this.state.canvasPositionY = -playerPosComp.state.pos.y * this.state.canvasScale + APP_HEIGHT / 2
 	}
 
 	// ##########################################

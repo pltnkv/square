@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js'
-import {applyPositionAndRotation} from "../../utils/moveUtils";
 import BaseObjectVisual from "./BaseObjectVisual"
 import {GameObject} from "../../logic/GameObject";
 import {PositionComponentKey} from "../../components/PositionComponent";
+import {applyPositionAndRotation} from "../../utils/stateUtils";
 
 export default class SpellVisual extends BaseObjectVisual {
 

@@ -1,5 +1,6 @@
 import Direction from 'logic/Direction'
 import {GameObject} from "./GameObject";
+import EarthType from "./EarthType";
 
 export default interface IState {
 	// viewport: {
@@ -21,11 +22,16 @@ export default interface IState {
 	mapSize: ISize
 	objects: GameObject[]
 	players: GameObject[]
+	earthCells: IEarthCell[][]
 }
 
 //////////////////////////////
 // Common
 //////////////////////////////
+
+export type IEarthCell = {
+	type: EarthType
+}
 
 export type TurnAction = {
 	type: 'turn'

@@ -9,6 +9,7 @@ import {PositionComponent, PositionComponentKey} from "../components/PositionCom
 import {MovableComponent, MovableComponentKey} from "../components/MovableComponent";
 import {EnemyComponent, EnemyComponentKey} from "../components/EnemyComponent";
 import {SpellableComponent, SpellableComponentKey} from "../components/SpellableComponent";
+import {EarthTransformerComponent, EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
 
 type ComponentByKey = {
 	[BatComponentKey]: BatComponent
@@ -23,6 +24,7 @@ type ComponentByKey = {
 	[PositionComponentKey]: PositionComponent
 	[ObstacleComponentKey]: ObstacleComponent
 	[EnemyComponentKey]: EnemyComponent
+	[EarthTransformerComponentKey]: EarthTransformerComponent
 }
 
 export class GameObject {

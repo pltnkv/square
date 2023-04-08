@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js'
-import {applyPosition} from "../../utils/moveUtils";
 import BaseObjectVisual from "./BaseObjectVisual";
 import {TILE_SIZE} from "../../consts";
 import {GameObject} from "../../logic/GameObject";
+import {applyPosition} from "../../utils/stateUtils";
 
 export default class WaterVisual extends BaseObjectVisual {
 

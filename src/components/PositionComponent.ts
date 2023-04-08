@@ -1,8 +1,7 @@
 import {IBoundingBox, IPoint, ISize} from "../logic/IState";
 import {BaseComponent} from "./BaseComponent";
 import Direction from "../logic/Direction";
-import {GameObject} from "../logic/GameObject";
-import {posAndSizeToBoundingBox} from "../utils/stateUtils";
+import {posAndSizeToBoundingBox} from "../utils/mathUtils";
 
 export type IPositionComponentState = {
 	readonly direction: Direction
@@ -34,6 +33,4 @@ export class PositionComponent extends BaseComponent<IPositionComponentState> {
 		const s:Mutable<IPositionComponentState> = this.state
 		s.boundingBox = posAndSizeToBoundingBox(this.state.pos, this.state.size)
 	}
-
-
 }

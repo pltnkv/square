@@ -1,10 +1,10 @@
 import * as PIXI from 'pixi.js'
 import {DEBUG_SIZES, MAX_PLAYER_HP, TILE_SIZE} from 'consts'
-import {applyPosition, applyPositionAndRotation} from "../../utils/moveUtils"
 import BaseObjectVisual from "./BaseObjectVisual"
 import {GameObject} from "../../logic/GameObject";
 import {PlayerComponentKey} from "../../components/PlayerComponent";
 import {HPComponentKey} from "../../components/HPComponent";
+import {applyPositionAndRotation} from "../../utils/stateUtils";
 
 
 export default class PlayerVisual extends BaseObjectVisual {

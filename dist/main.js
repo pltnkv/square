@@ -1,6 +1,6 @@
 (self["webpackChunksquare"] = self["webpackChunksquare"] || []).push([[179],{
 
-/***/ 411:
+/***/ 956:
 /***/ ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -119,6 +119,8 @@ export const PLAYER_SPEED = 30
 export const SPELL_SPEED = 40
 export const BAT_SPEED = 10
  */
+const APP_WIDTH = 1200;
+const APP_HEIGHT = 920;
 const consts_TILE_SIZE = 90;
 const GAME_TICK_DURATION_IN_MS = 30;
 const TIME_BETWEEN_MOVES = 50;
@@ -129,7 +131,7 @@ const SPELL_LIFESPAN = 100;
 const MAX_BAT_STEPS_IN_LINE = 30;
 const PLAYER_SPEED = 10;
 const SPELL_SPEED = 20;
-const BAT_SPEED = 10;
+const BAT_SPEED = 4;
 const DEBUG_SIZES = false;
 const DEBUG_STATE = false;
 
@@ -146,35 +148,60 @@ class BaseVisual {
     }
 }
 
+// CONCATENATED MODULE: ./src/logic/EarthType.ts
+var EarthType;
+(function (EarthType) {
+    EarthType[EarthType["Regular"] = 0] = "Regular";
+    EarthType[EarthType["Lava"] = 1] = "Lava";
+    EarthType[EarthType["Magic"] = 2] = "Magic";
+})(EarthType || (EarthType = {}));
+/* harmony default export */ const logic_EarthType = (EarthType);
+
 // CONCATENATED MODULE: ./src/visuals/GameFieldLayer.ts
+
 
 
 
 class GameFieldLayer extends BaseVisual {
     constructor(state) {
         super();
+        this.earthSprites = [];
+        this.tilesType = {};
         this.state = state;
         this.view = new pixi_es/* Graphics */.TC();
-        const texture = pixi_es/* Texture.from */.xE.from('assets/bg_tile.png');
-        //create field
-        for (let i = 0; i < state.mapSize.height; i++) {
-            for (let j = 0; j < state.mapSize.width; j++) {
-                const tile = new pixi_es/* Sprite */.jy(texture);
+        this.tilesType = {
+            [logic_EarthType.Regular]: pixi_es/* Texture.from */.xE.from('assets/bg_regular.png'),
+            [logic_EarthType.Lava]: pixi_es/* Texture.from */.xE.from('assets/bg_lava.jpg'),
+        };
+        for (let j = 0; j < this.state.earthCells.length; j++) {
+            this.earthSprites[j] = [];
+            const row = this.state.earthCells[j];
+            for (let i = 0; i < row.length; i++) {
+                const tile = new pixi_es/* Sprite */.jy();
                 tile.alpha = 0.5;
                 tile.x = i * consts_TILE_SIZE;
                 tile.y = j * consts_TILE_SIZE;
+                this.earthSprites[j][i] = tile;
                 this.view.addChild(tile);
-                this.view.beginFill(0xfdfffc);
+                // borders
+                this.view.beginFill(0xffffff);
                 this.view.lineStyle(1, 0x011627, 0.2);
                 this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
                 this.view.endFill();
             }
         }
     }
+    update() {
+        for (let j = 0; j < this.state.earthCells.length; j++) {
+            const row = this.state.earthCells[j];
+            for (let i = 0; i < row.length; i++) {
+                const earthType = row[i].type;
+                this.earthSprites[j][i].texture = this.tilesType[earthType];
+            }
+        }
+    }
     getView() {
         return this.view;
-    }
-    update() {
     }
 }
 
@@ -215,30 +242,6 @@ class EffectsLayer extends BaseVisual {
     // 	explosion.gotoAndStop()
     // }
     update() {
-    }
-}
-
-// CONCATENATED MODULE: ./src/visuals/PanelLayer.ts
-
-
-class PanelLayer extends BaseVisual {
-    constructor(state) {
-        super();
-        this.state = state;
-        this.view = new pixi_es/* Graphics */.TC();
-    }
-    getView() {
-        return this.view;
-    }
-    update(turnTimePercent) {
-        const MAX_LEN = 400;
-        this.view.clear();
-        this.view.lineStyle(1, 0x011627, 1);
-        this.view.drawRect(200, 10, MAX_LEN, 20);
-        this.view.endFill();
-        // this.view.beginFill(0xe71d36)
-        // this.view.drawRect(200, 10, lerp(0, MAX_LEN, turnTimePercent), 20)
-        // this.view.endFill()
     }
 }
 
@@ -306,23 +309,45 @@ const SpellableComponentKey = 'Spellable';
 class SpellableComponent extends BaseComponent {
 }
 
-// CONCATENATED MODULE: ./src/components/PlayerComponent.ts
+// CONCATENATED MODULE: ./src/utils/mathUtils.ts
 
-const PlayerComponentKey = 'Player';
-class PlayerComponent extends BaseComponent {
-    constructor(state) {
-        super();
-        this.state = state;
-    }
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// CONVERT ONE TO ANOTHER
+//////////////////////////////////////////////////////////////////////////////////////////
+function cellToCoord(i) {
+    return i * TILE_SIZE + TILE_SIZE / 2;
 }
-
-// CONCATENATED MODULE: ./src/utils/stateUtils.ts
-
-
-
-////////////////////////////////////////////
-// There is no function that change state
-////////////////////////////////////////////
+function positionToCell(point) {
+    return {
+        i: Math.floor(point.x / consts_TILE_SIZE),
+        j: Math.floor(point.y / consts_TILE_SIZE)
+    };
+}
+function cellToPosition(cell) {
+    return {
+        x: cell.i * consts_TILE_SIZE + consts_TILE_SIZE / 2,
+        y: cell.j * consts_TILE_SIZE + consts_TILE_SIZE / 2
+    };
+}
+//origin is center
+function getBBFromPoint(point, width, height) {
+    return {
+        top: point.y - height / 2,
+        bottom: point.y + height / 2,
+        left: point.x - width / 2,
+        right: point.x + width / 2,
+    };
+}
+//todo same as getBBFromPoint
+function posAndSizeToBoundingBox(pos, size) {
+    return {
+        top: pos.y - size.height / 2,
+        bottom: pos.y + size.height / 2,
+        left: pos.x - size.width / 2,
+        right: pos.x + size.width / 2,
+    };
+}
 function directionToRad(d) {
     if (d === logic_Direction.Down) {
         return 0;
@@ -338,36 +363,171 @@ function directionToRad(d) {
     }
     return 0;
 }
-function findEmptySell() {
-    //TODO убедиться что в этой точке нет игроков
-    return {
-        x: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
-        y: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
-    };
+/**
+ * Returns normal vector by default
+ */
+function directionToVector(direction, value = 1) {
+    if (direction === logic_Direction.Up) {
+        return { x: 0, y: -value };
+    }
+    if (direction === logic_Direction.Down) {
+        return { x: 0, y: value };
+    }
+    if (direction === logic_Direction.Left) {
+        return { x: -value, y: 0 };
+    }
+    if (direction === logic_Direction.Right) {
+        return { x: value, y: 0 };
+    }
+    throw 'unknown direction';
 }
+//////////////////////////////////////////////////////////////////////////////////////////
+// OVERLAPS utils
+//////////////////////////////////////////////////////////////////////////////////////////
+function isBBsOverlaps(bb1, bb2) {
+    if (bb1.left > bb2.right
+        || bb1.right < bb2.left
+        || bb1.top > bb2.bottom
+        || bb1.bottom < bb2.top) {
+        // no collision
+        return false;
+    }
+    // collision detected
+    return true;
+}
+function isPointInsideBB(point, bb) {
+    if (point.x >= bb.left
+        && point.x <= bb.right
+        && point.y >= bb.top
+        && point.y <= bb.bottom) {
+        // no collision
+        return true;
+    }
+    // collision detected
+    return false;
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+// OPERATIONS ON VECTORS
+//////////////////////////////////////////////////////////////////////////////////////////
+function lerp(a1, a2, t) {
+    return a1 * (1 - t) + a2 * t;
+}
+function addVectors(target, added, mutate = true) {
+    if (mutate) {
+        target.x += added.x;
+        target.y += added.y;
+        return target;
+    }
+    else {
+        return {
+            x: target.x + added.x,
+            y: target.y + added.y
+        };
+    }
+}
+function multVector(target, value, mutate = true) {
+    if (mutate) {
+        target.x *= value;
+        target.y *= value;
+        return target;
+    }
+    else {
+        return {
+            x: target.x * value,
+            y: target.y * value
+        };
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+// OTHER UTILS
+//////////////////////////////////////////////////////////////////////////////////////////
 const directions = [logic_Direction.Up, logic_Direction.Down, logic_Direction.Left, logic_Direction.Right];
 function getRandomDirection() {
     return directions[Math.floor(Math.random() * directions.length)];
 }
-function getPlayer(state, playerId) {
-    return state.players.find(p => {
-        const playerComp = p.require(PlayerComponentKey);
-        return playerComp.state.id === playerId;
-    });
+//This implementation simply moves one step at a time towards the destination by checking the relative position of the current cell and the destination, and incrementing or decrementing either the i or j coordinate accordingly. It adds each new cell to the path, and continues until the destination is reached.
+//Note that this implementation does not take into account any obstacles or other constraints that might be present in the environment, and may not always find the shortest path. It is intended as a simple example and may not be suitable for all use cases.
+function findPath(from, to) {
+    const path = [];
+    let current = from;
+    while (current.i !== to.i || current.j !== to.j) {
+        if (current.i < to.i) {
+            current = { i: current.i + 1, j: current.j };
+        }
+        else if (current.i > to.i) {
+            current = { i: current.i - 1, j: current.j };
+        }
+        else if (current.j < to.j) {
+            current = { i: current.i, j: current.j + 1 };
+        }
+        else {
+            current = { i: current.i, j: current.j - 1 };
+        }
+        path.push(current);
+    }
+    return path;
 }
-function posAndSizeToBoundingBox(pos, size) {
-    return {
-        left: pos.x - size.width / 2,
-        right: pos.x + size.width / 2,
-        top: pos.y - size.height / 2,
-        bottom: pos.y + size.height / 2,
-    };
+function getDirectionByCell(fromCell, toCell) {
+    if (fromCell.i === toCell.i) {
+        if (fromCell.j > toCell.j) {
+            return logic_Direction.Up;
+        }
+        else {
+            return logic_Direction.Down;
+        }
+    }
+    else {
+        if (fromCell.i > toCell.i) {
+            return logic_Direction.Left;
+        }
+        else {
+            return logic_Direction.Right;
+        }
+    }
+}
+function isEqual(a, b) {
+    if (a === undefined || b === undefined) {
+        return false;
+    }
+    if ('i' in a && 'j' in a && 'i' in b && 'j' in b) {
+        return a.i === b.i && a.j === b.j;
+    }
+    // find out which one is point
+    if ('x' in a && 'y' in a && 'x' in b && 'y' in b) {
+        return a.x === b.x && a.y === b.y;
+    }
+    // find out which one is bounding box
+    if ('top' in a && 'bottom' in a && 'left' in a && 'right' in a && 'top' in b && 'bottom' in b && 'left' in b && 'right' in b) {
+        return a.top === b.top && a.bottom === b.bottom && a.left === b.left && a.right === b.right;
+    }
+    return false;
+}
+function findCellToTransform(centerCell, earthType, earthSells) {
+    // todo cделать нормальное заполнение потом
+    return getCellsAround(centerCell, 2, earthSells, earthType);
+}
+function getCellsAround(centerCell, offset, earthSells, earthType) {
+    for (let j = -offset; j <= offset; j++) {
+        for (let i = -offset; i <= offset; i++) {
+            if (i === 0 && j === 0) {
+                continue;
+            }
+            const cell = earthSells[centerCell.j + j][centerCell.i + i];
+            if (cell && cell.type !== earthType) {
+                return {
+                    i: centerCell.i + i,
+                    j: centerCell.j + j
+                };
+            }
+        }
+    }
+    return undefined;
 }
 
 // CONCATENATED MODULE: ./src/components/PositionComponent.ts
 
 
-const PositionComponent_PositionComponentKey = 'Position';
+const PositionComponentKey = 'Position';
 class PositionComponent extends BaseComponent {
     constructor(state) {
         super();
@@ -399,7 +559,18 @@ class ObstacleComponent extends BaseComponent {
     }
 }
 
+// CONCATENATED MODULE: ./src/components/EarthTransformerComponent.ts
+
+const EarthTransformerComponentKey = 'EarthTransformer';
+class EarthTransformerComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
 // CONCATENATED MODULE: ./src/logic/GameLoopLogic.ts
+
 
 
 
@@ -435,6 +606,14 @@ function onGameTick(ctrl, state) {
         if (spellCaster && spellCaster.state.castSpell) {
             spellCaster.onCreateSpell(object);
             spellCaster.state.castSpell = false;
+        }
+        const earthTransformer = object.as(EarthTransformerComponentKey);
+        if (earthTransformer) {
+            const centerCell = positionToCell(object.require(PositionComponentKey).state.pos);
+            const cellToTransform = findCellToTransform(centerCell, earthTransformer.state.earthType, state.earthCells);
+            if (cellToTransform) {
+                state.earthCells[cellToTransform.j][cellToTransform.i].type = earthTransformer.state.earthType;
+            }
         }
     });
     ////////////////////////////////////////////////
@@ -488,12 +667,12 @@ function tryReduceHP(object) {
     }
 }
 function hasCollisionsWithObstacles(object, targetPos, objects) {
-    const posComp = object.require(PositionComponent_PositionComponentKey);
+    const posComp = object.require(PositionComponentKey);
     const targetBB = posAndSizeToBoundingBox(targetPos, posComp.state.size);
     for (let i = 0; i < objects.length; i++) {
         if (object !== objects[i] && objects[i].has(ObstacleComponentKey)) {
-            const obj2PosComp = objects[i].require(PositionComponent_PositionComponentKey);
-            if (hasCollisionInBB(targetBB, obj2PosComp.state.boundingBox)) {
+            const obj2PosComp = objects[i].require(PositionComponentKey);
+            if (isBBsOverlaps(targetBB, obj2PosComp.state.boundingBox)) {
                 return true;
             }
         }
@@ -519,20 +698,52 @@ function adjustCoord(val) {
     }
 }
 function hasCollisionInObjects(obj1, obj2) {
-    const pos1 = obj1.require(PositionComponent_PositionComponentKey);
-    const pos2 = obj2.require(PositionComponent_PositionComponentKey);
-    return hasCollisionInBB(pos1.state.boundingBox, pos2.state.boundingBox);
+    const pos1 = obj1.require(PositionComponentKey);
+    const pos2 = obj2.require(PositionComponentKey);
+    return isBBsOverlaps(pos1.state.boundingBox, pos2.state.boundingBox);
 }
-function hasCollisionInBB(bb1, bb2) {
-    if (bb1.left > bb2.right
-        || bb1.right < bb2.left
-        || bb1.top > bb2.bottom
-        || bb1.bottom < bb2.top) {
-        // no collision
-        return false;
+
+// CONCATENATED MODULE: ./src/components/PlayerComponent.ts
+
+const PlayerComponentKey = 'Player';
+class PlayerComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
     }
-    // collision detected
-    return true;
+}
+
+// CONCATENATED MODULE: ./src/utils/stateUtils.ts
+
+
+
+
+////////////////////////////////////////////
+// There is no function that change state
+////////////////////////////////////////////
+function applyPosition(view, object) {
+    const comp = object.require(PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
+}
+function applyPositionAndRotation(view, object) {
+    const comp = object.require(PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
+    view.rotation = directionToRad(comp.state.direction);
+}
+function findEmptySell() {
+    //TODO убедиться что в этой точке нет игроков
+    return {
+        x: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
+        y: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
+    };
+}
+function getPlayer(state, playerId) {
+    return state.players.find(p => {
+        const playerComp = p.require(PlayerComponentKey);
+        return playerComp.state.id === playerId;
+    });
 }
 
 // CONCATENATED MODULE: ./src/map.ts
@@ -542,10 +753,12 @@ const P = 'player2';
 const t = 'tree';
 const w = 'water';
 const b = 'bat';
+const v = 'volcano';
 const MapEmpty = (/* unused pure expression or super */ null && (o));
 const MapTree = t;
 const MapWater = w;
 const MapBat = b;
+const MapVolcano = v;
 const MapPlayer1 = p;
 const MapPlayer2 = P;
 /*
@@ -563,17 +776,17 @@ export const map1 = [
 ]
 */
 const map1 = [
-    [p, o, o, o, P, o, o, o, o, o, o, o, o, o, o],
+    [p, o, o, o, o, o, o, o, o, o, o, o, o, o, o],
     [o, o, t, o, o, o, o, t, t, b, o, o, o, o, o],
-    [o, o, t, t, b, o, o, o, t, o, o, o, o, o, o],
+    [o, o, t, t, o, o, o, o, t, o, o, o, o, o, o],
     [o, o, o, t, t, o, o, o, o, o, o, o, o, o, o],
-    [o, o, o, o, o, o, o, o, o, o, o, o, o, o, o],
+    [o, o, o, b, o, o, o, o, o, o, o, o, o, o, o],
     [o, o, o, o, o, t, t, t, o, o, o, o, o, o, o],
-    [o, o, o, o, o, w, w, o, o, o, o, o, o, o, o],
+    [o, o, o, o, o, w, w, o, o, o, o, o, P, o, o],
     [o, o, b, o, w, w, t, o, o, o, o, o, o, o, o],
     [o, o, o, w, w, b, o, o, o, o, o, o, o, o, o],
     [o, o, w, w, w, o, o, o, o, o, o, o, o, o, o],
-    [o, o, w, w, w, o, o, o, o, o, o, o, o, o, o],
+    [o, o, w, w, w, o, o, o, o, o, v, o, o, o, o],
     [o, o, w, w, o, o, o, o, o, o, o, o, o, o, o],
     [o, o, w, o, o, o, o, o, o, o, o, o, o, o, o],
     [o, w, w, o, o, o, o, o, o, o, o, o, o, o, o],
@@ -581,12 +794,14 @@ const map1 = [
 
 // CONCATENATED MODULE: ./src/logic/MapBuilder.ts
 
+
 function buildMap(map, ctrl) {
     for (let j = 0; j < map.length; j++) {
         const mapRow = map[j];
         for (let i = 0; i < mapRow.length; i++) {
             const cellValue = mapRow[i];
             const cell = { i, j };
+            ctrl.objectFactory.setEarthType(cell, logic_EarthType.Regular);
             switch (cellValue) {
                 case MapPlayer1:
                     ctrl.objectFactory.createPlayer(cell, 0, 0x2ec4b6);
@@ -603,6 +818,10 @@ function buildMap(map, ctrl) {
                 case MapWater:
                     ctrl.objectFactory.createWater(cell);
                     break;
+                case MapVolcano:
+                    ctrl.objectFactory.createVolcano(cell);
+                    ctrl.objectFactory.setEarthType(cell, logic_EarthType.Lava);
+                    break;
                 default:
                     // create nothing
                     break;
@@ -613,21 +832,6 @@ function buildMap(map, ctrl) {
         width: map[0].length,
         height: map.length
     };
-}
-
-// CONCATENATED MODULE: ./src/utils/moveUtils.ts
-
-
-function applyPosition(view, object) {
-    const comp = object.require(PositionComponent_PositionComponentKey);
-    view.x = comp.state.pos.x;
-    view.y = comp.state.pos.y;
-}
-function applyPositionAndRotation(view, object) {
-    const comp = object.require(PositionComponent_PositionComponentKey);
-    view.x = comp.state.pos.x;
-    view.y = comp.state.pos.y;
-    view.rotation = directionToRad(comp.state.direction);
 }
 
 // CONCATENATED MODULE: ./src/utils/debugUtils.ts
@@ -652,7 +856,7 @@ class BaseObjectVisual extends BaseVisual {
         this.view = new pixi_es/* Container */.W2();
         this.object = object;
         if (DEBUG_SIZES) {
-            const comp = object.as(PositionComponent_PositionComponentKey);
+            const comp = object.as(PositionComponentKey);
             if (comp) {
                 addDebugView(this.view, comp);
             }
@@ -674,7 +878,7 @@ class BaseObjectVisual extends BaseVisual {
 class SpellVisual extends BaseObjectVisual {
     constructor(object) {
         super(object);
-        const positionComponent = this.object.require(PositionComponent_PositionComponentKey);
+        const positionComponent = this.object.require(PositionComponentKey);
         const g = new pixi_es/* Graphics */.TC();
         g.alpha = 0.6;
         g.beginFill(0xe71d36);
@@ -749,76 +953,6 @@ class BatVisual extends BaseObjectVisual {
 }
 //WTF?
 
-// CONCATENATED MODULE: ./src/utils/mathUtils.ts
-
-
-
-function lerp(a1, a2, t) {
-    return a1 * (1 - t) + a2 * t;
-}
-function addVectors(target, added, mutate = true) {
-    if (mutate) {
-        target.x += added.x;
-        target.y += added.y;
-        return target;
-    }
-    else {
-        return {
-            x: target.x + added.x,
-            y: target.y + added.y
-        };
-    }
-}
-function multVector(target, value, mutate = true) {
-    if (mutate) {
-        target.x *= value;
-        target.y *= value;
-        return target;
-    }
-    else {
-        return {
-            x: target.x * value,
-            y: target.y * value
-        };
-    }
-}
-function getBoundingBoxFromObj(object) {
-    const positionComp = object.require(PositionComponentKey);
-    return {
-        left: positionComp.state.pos.x - positionComp.state.size.width / 2,
-        right: positionComp.state.pos.x + positionComp.state.size.width / 2,
-        top: positionComp.state.pos.y - positionComp.state.size.height / 2,
-        bottom: positionComp.state.pos.y + positionComp.state.size.height / 2,
-    };
-}
-/**
- * Returns normal vector by default
- */
-function directionToVector(direction, value = 1) {
-    if (direction === logic_Direction.Up) {
-        return { x: 0, y: -value };
-    }
-    if (direction === logic_Direction.Down) {
-        return { x: 0, y: value };
-    }
-    if (direction === logic_Direction.Left) {
-        return { x: -value, y: 0 };
-    }
-    if (direction === logic_Direction.Right) {
-        return { x: value, y: 0 };
-    }
-    throw 'unknown direction';
-}
-function cellToCoord(i) {
-    return i * TILE_SIZE + TILE_SIZE / 2;
-}
-function cellToPosition(cell) {
-    return {
-        x: cell.i * consts_TILE_SIZE + consts_TILE_SIZE / 2,
-        y: cell.j * consts_TILE_SIZE + consts_TILE_SIZE / 2
-    };
-}
-
 // CONCATENATED MODULE: ./src/visuals/objects/TreeVisual.ts
 
 
@@ -890,6 +1024,7 @@ class VisualComponent extends BaseComponent {
 
 
 
+
 class GameObject {
     constructor() {
         this.components = new Map();
@@ -912,7 +1047,29 @@ class GameObject {
     }
 }
 
+// CONCATENATED MODULE: ./src/visuals/objects/VolcanoVisual.ts
+
+
+
+class VolcanoVisual extends BaseObjectVisual {
+    constructor(object) {
+        super(object);
+        const texture = pixi_es/* Texture.from */.xE.from('assets/volcano.png');
+        const tree = new pixi_es/* Sprite */.jy(texture);
+        tree.anchor.set(0.5);
+        tree.x = 0;
+        tree.y = -5;
+        tree.scale.set(0.2);
+        this.view.addChild(tree);
+    }
+    update(turnTimePercent) {
+        applyPosition(this.view, this.object);
+    }
+}
+
 // CONCATENATED MODULE: ./src/logic/GameObjectsFactory.ts
+
+
 
 
 
@@ -945,6 +1102,12 @@ class GameObjectsFactory {
         this.state.objects.push(object);
         return object;
     }
+    setEarthType(cell, type) {
+        if (!this.state.earthCells[cell.i]) {
+            this.state.earthCells[cell.i] = [];
+        }
+        this.state.earthCells[cell.i][cell.j] = { type };
+    }
     createPlayer(cell, id, tintColor) {
         const object = this.createObject();
         object.addComponent(PlayerComponentKey, new PlayerComponent({
@@ -953,7 +1116,7 @@ class GameObjectsFactory {
             lastAssignedMoveTime: 0,
             lastSpellTime: 0,
         }));
-        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+        object.addComponent(PositionComponentKey, new PositionComponent({
             direction: logic_Direction.Down,
             size: { width: consts_TILE_SIZE * 0.6, height: consts_TILE_SIZE * 0.8 },
             pos: cellToPosition(cell),
@@ -961,7 +1124,7 @@ class GameObjectsFactory {
         object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
             var _a;
             const playerComp = object.require(PlayerComponentKey);
-            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            const positionComp = object.require(PositionComponentKey);
             if (playerComp.state.moveAction) {
                 if (playerComp.state.moveAction.type === 'move') {
                     const speed = directionToVector(positionComp.state.direction, PLAYER_SPEED);
@@ -991,7 +1154,7 @@ class GameObjectsFactory {
         object.addComponent(SpellCasterComponentKey, new SpellCasterComponent({
             castSpell: false
         }, (object) => {
-            this.createSpell(object.require(PositionComponent_PositionComponentKey));
+            this.createSpell(object.require(PositionComponentKey));
         }));
         object.addComponent(SpellableComponentKey, new SpellableComponent());
         this.addVisual(object, PlayerVisual);
@@ -1000,28 +1163,47 @@ class GameObjectsFactory {
     createBat(cell) {
         const object = this.createObject();
         object.addComponent(BatComponentKey, new BatComponent({
-            plannedStepInDirection: 0,
+            needToMove: false,
         }));
-        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
-            pos: cellToPosition(cell),
-            direction: logic_Direction.Down,
-            size: { width: consts_TILE_SIZE * 0.8, height: consts_TILE_SIZE * 0.8 },
-        }));
+        this.addPositionComponent(object, cell);
         object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
             const batComp = object.require(BatComponentKey);
-            const positionComp = object.require(PositionComponent_PositionComponentKey);
-            if (batComp.state.plannedStepInDirection > 0) {
-                // do move
-                batComp.state.plannedStepInDirection--;
-                // todo
-                // const speed = getSpeedByDirection(bat.direction, BAT_SPEED)
-                // addVectorPointWithMutation(bat.pos, speed)
+            batComp.state.needToMove = false;
+            const batPositionComp = object.require(PositionComponentKey);
+            const batScanningAreaSize = consts_TILE_SIZE * 6;
+            const batScanningArea = getBBFromPoint(batPositionComp.state.pos, batScanningAreaSize, batScanningAreaSize);
+            const playerInAttackArea = this.state.players.find(p => {
+                return isPointInsideBB(p.require(PositionComponentKey).state.pos, batScanningArea);
+            });
+            if (playerInAttackArea) {
+                batComp.state.needToMove = true;
+                const batPos = batPositionComp.state.pos;
+                const batCell = positionToCell(batPos);
+                if (isEqual(batCell, batComp.state.lastProcessedCell)) {
+                    // skip processing
+                }
+                else {
+                    const playerPos = playerInAttackArea.require(PositionComponentKey).state.pos;
+                    const playerCell = positionToCell(playerPos);
+                    const path = findPath(batCell, playerCell);
+                    if (path.length > 0) {
+                        const nextCell = path[0];
+                        const direction = getDirectionByCell(batCell, nextCell);
+                        batPositionComp.setDirection(direction);
+                        batComp.state.lastProcessedCell = batCell;
+                    }
+                }
             }
-            else {
-                //change direction
-                positionComp.setDirection(getRandomDirection());
-                // bat.plannedStepInDirection = Math.round(Math.random() * MAX_BAT_STEPS_IN_LINE)
-                batComp.state.plannedStepInDirection = MAX_BAT_STEPS_IN_LINE;
+            if (batComp.state.needToMove) {
+                const speed = directionToVector(batPositionComp.state.direction, BAT_SPEED);
+                const newPos = addVectors(batPositionComp.state.pos, speed, false);
+                const collided = hasCollisionsWithObstacles(object, newPos, this.ctrl.state.objects);
+                if (!collided) {
+                    batPositionComp.setPos(newPos);
+                }
+                else {
+                    batComp.state.lastProcessedCell = undefined;
+                }
             }
         }));
         object.addComponent(HPComponentKey, new HPComponent({
@@ -1043,13 +1225,13 @@ class GameObjectsFactory {
             leftMoves: SPELL_LIFESPAN
         }));
         const shift = directionToVector(position.state.direction, consts_TILE_SIZE * 0.6);
-        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
+        object.addComponent(PositionComponentKey, new PositionComponent({
             pos: addVectors(Object.assign({}, position.state.pos), shift),
             size: { width: consts_TILE_SIZE / 3, height: consts_TILE_SIZE / 3 },
             direction: position.state.direction,
         }));
         object.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
-            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            const positionComp = object.require(PositionComponentKey);
             const spellComp = object.require(SpellComponentKey);
             if (spellComp.state.leftMoves > 0) {
                 spellComp.state.leftMoves--;
@@ -1066,7 +1248,7 @@ class GameObjectsFactory {
             hp: 1,
         }, (object) => {
         }, (object) => {
-            const positionComp = object.require(PositionComponent_PositionComponentKey);
+            const positionComp = object.require(PositionComponentKey);
             this.ctrl.effects.showExplosion(positionComp.state.pos);
             this.destroyObject(object);
         }));
@@ -1075,24 +1257,33 @@ class GameObjectsFactory {
     }
     createTree(cell) {
         const object = this.createObject();
-        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
-            direction: logic_Direction.Down,
-            pos: cellToPosition(cell),
-            size: { width: consts_TILE_SIZE * 0.9, height: consts_TILE_SIZE * 0.9 },
-        }));
+        this.addPositionComponent(object, cell);
         object.addComponent(ObstacleComponentKey, new ObstacleComponent({ cell }));
         object.addComponent(SpellableComponentKey, new SpellableComponent());
         this.addVisual(object, TreeVisual);
     }
+    createVolcano(cell) {
+        const object = this.createObject();
+        object.addComponent(EarthTransformerComponentKey, new EarthTransformerComponent({
+            earthType: logic_EarthType.Lava,
+        }));
+        this.addPositionComponent(object, cell);
+        object.addComponent(ObstacleComponentKey, new ObstacleComponent({ cell }));
+        object.addComponent(SpellableComponentKey, new SpellableComponent());
+        this.addVisual(object, VolcanoVisual);
+    }
     createWater(cell) {
         const object = this.createObject();
-        object.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
-            direction: logic_Direction.Down,
-            pos: cellToPosition(cell),
-            size: { width: consts_TILE_SIZE * 0.9, height: consts_TILE_SIZE * 0.9 },
-        }));
+        this.addPositionComponent(object, cell, 1);
         object.addComponent(ObstacleComponentKey, new ObstacleComponent({ cell }));
         this.addVisual(object, WaterVisual);
+    }
+    addPositionComponent(object, cell, sizeScale = 0.8) {
+        object.addComponent(PositionComponentKey, new PositionComponent({
+            direction: logic_Direction.Down,
+            pos: cellToPosition(cell),
+            size: { width: consts_TILE_SIZE * sizeScale, height: consts_TILE_SIZE * sizeScale },
+        }));
     }
     addVisual(object, visualClass) {
         const visual = new visualClass(object);
@@ -1139,7 +1330,6 @@ class GameObjectsFactory {
 
 
 
-
 class Controller {
     constructor(app) {
         this.visuals = [];
@@ -1150,7 +1340,8 @@ class Controller {
             canvasPositionY: 0,
             mapSize: { width: 0, height: 0 },
             objects: [],
-            players: []
+            players: [],
+            earthCells: []
         };
         this.scene = new Scene(app, this.state);
         this.objectFactory = new GameObjectsFactory(this, this.state);
@@ -1163,9 +1354,9 @@ class Controller {
         this.effects = new EffectsLayer();
         this.visuals.push(this.effects);
         this.scene.effectsLayer.addChild(this.effects.getView());
-        const panel = new PanelLayer(this.state);
-        this.visuals.push(panel);
-        this.scene.stage.addChild(panel.getView());
+        // const panel = new PanelLayer(this.state)
+        // this.visuals.push(panel)
+        // this.scene.stage.addChild(panel.getView())
     }
     //////////////////////////////////////////////////////////
     // GAME LOOP
@@ -1176,33 +1367,47 @@ class Controller {
     }
     onCameraUpdate() {
         const playerObject = getPlayer(this.state, 1);
-        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
+        const positionComp = playerObject.require(PositionComponentKey);
         const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos);
         const sceneSize = 900;
         const offsetForMovingBox = 200;
-        const playersMovingBox = {
+        const playersScreenBox = {
             top: offsetForMovingBox,
             left: offsetForMovingBox,
             right: sceneSize - offsetForMovingBox,
             bottom: sceneSize - offsetForMovingBox
         };
-        const leftDiff = playersMovingBox.left - playerPosScreen.x;
-        const rightDiff = playerPosScreen.x - playersMovingBox.right;
-        const topDiff = playersMovingBox.top - playerPosScreen.y;
-        const bottomDiff = playerPosScreen.y - playersMovingBox.bottom;
-        const scale = 1;
+        const leftDiff = playersScreenBox.left - playerPosScreen.x;
+        const rightDiff = playerPosScreen.x - playersScreenBox.right;
+        const topDiff = playersScreenBox.top - playerPosScreen.y;
+        const bottomDiff = playerPosScreen.y - playersScreenBox.bottom;
         if (leftDiff > 0) {
-            this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.left;
+            this.state.canvasPositionX = -positionComp.state.pos.x * this.state.canvasScale + playersScreenBox.left;
         }
         if (rightDiff > 0) {
-            this.state.canvasPositionX = -positionComp.state.pos.x + playersMovingBox.right;
+            this.state.canvasPositionX = -positionComp.state.pos.x * this.state.canvasScale + playersScreenBox.right;
         }
         if (topDiff > 0) {
-            this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.top;
+            this.state.canvasPositionY = -positionComp.state.pos.y * this.state.canvasScale + playersScreenBox.top;
         }
         if (bottomDiff > 0) {
-            this.state.canvasPositionY = -positionComp.state.pos.y + playersMovingBox.bottom;
+            this.state.canvasPositionY = -positionComp.state.pos.y * this.state.canvasScale + playersScreenBox.bottom;
         }
+    }
+    zoomIn() {
+        this.state.canvasScale *= 1.1;
+        this.updateZoom();
+    }
+    zoomOut() {
+        this.state.canvasScale /= 1.1;
+        this.updateZoom();
+    }
+    updateZoom() {
+        this.state.canvasScaleInv = 1 / this.state.canvasScale;
+        const playerObject = getPlayer(this.state, 1);
+        const playerPosComp = playerObject.require(PositionComponentKey);
+        this.state.canvasPositionX = -playerPosComp.state.pos.x * this.state.canvasScale + APP_WIDTH / 2;
+        this.state.canvasPositionY = -playerPosComp.state.pos.y * this.state.canvasScale + APP_HEIGHT / 2;
     }
     // ##########################################
     // Inputs processing
@@ -1210,7 +1415,7 @@ class Controller {
     onPlayerMove(playerId, direction) {
         const playerObject = getPlayer(this.state, playerId);
         const playerComp = playerObject.require(PlayerComponentKey);
-        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
+        const positionComp = playerObject.require(PositionComponentKey);
         const currentTime = Date.now();
         if (currentTime - playerComp.state.lastAssignedMoveTime < TIME_BETWEEN_MOVES) {
             return;
@@ -1297,12 +1502,18 @@ function replacer(key, value) {
 }
 
 // CONCATENATED MODULE: ./src/controls.ts
-function controls_init(app) {
+function controls_init(app, ctrl) {
     document.querySelector('#pause-button').addEventListener('click', () => {
         app.stop();
     });
     document.querySelector('#play-button').addEventListener('click', () => {
         app.start();
+    });
+    document.querySelector('#zoom-in-button').addEventListener('click', () => {
+        ctrl.zoomIn();
+    });
+    document.querySelector('#zoom-out-button').addEventListener('click', () => {
+        ctrl.zoomOut();
     });
 }
 
@@ -1315,7 +1526,7 @@ function controls_init(app) {
 
 
 const app = new pixi_es/* Application */.Mx({
-    width: 920, height: 950, backgroundColor: 0x222222, resolution: 1,
+    width: APP_WIDTH, height: APP_HEIGHT, backgroundColor: 0x222222, resolution: 1,
 });
 document.body.appendChild(app.view);
 const debug = new DebugState();
@@ -1339,10 +1550,10 @@ app.ticker.add((delta) => {
     ctrl.scene.updateCamera();
     debug.update(ctrl.state);
 });
-controls_init(app);
+controls_init(app, ctrl);
 
 
 /***/ })
 
 },
-0,[[411,666,244]]]);
+0,[[956,666,244]]]);

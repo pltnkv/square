@@ -1,14 +1,13 @@
 import * as PIXI from 'pixi.js'
 import * as UserInput from 'UserInput'
 import Controller from 'logic/Controller'
-import Scene from 'Scene'
-import {GAME_TICK_DURATION_IN_MS} from 'consts'
+import {APP_HEIGHT, APP_WIDTH, GAME_TICK_DURATION_IN_MS} from 'consts'
 import DebugState from 'DebugState'
 import * as controls from 'controls'
-import {checkInputs} from "UserInput";
+import {checkInputs} from "UserInput"
 
 const app = new PIXI.Application({
-	width: 920, height: 950, backgroundColor: 0x222222, resolution: 1,
+	width: APP_WIDTH, height: APP_HEIGHT, backgroundColor: 0x222222, resolution: 1,
 })
 document.body.appendChild(app.view)
 
@@ -38,4 +37,4 @@ app.ticker.add((delta) => {
 	debug.update(ctrl.state)
 })
 
-controls.init(app)
+controls.init(app, ctrl)

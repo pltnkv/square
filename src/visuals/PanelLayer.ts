@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js'
 import IState from 'logic/IState'
 import BaseVisual from 'visuals/BaseVisual'
-import {lerp} from 'utils/mathUtils'
 
 export default class PanelLayer extends BaseVisual {
 

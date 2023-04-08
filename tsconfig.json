@@ -1,13 +1,16 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src/",
+    "baseUrl": "src",
+    "rootDir": "./src/",
     "outDir": "./dist/",
     "strict": true,
     "target": "es6",
     "module": "esnext",
     "moduleResolution": "node",
     "jsx": "react",
-    "allowJs": true
+    "allowJs": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
   },
-  "include": ["src/**/*"]
+  "include": ["./src/**/*"]
 }

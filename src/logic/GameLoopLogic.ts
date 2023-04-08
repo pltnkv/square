@@ -1,5 +1,5 @@
 import Controller from "./Controller";
-import IState, {IBoundingBox, IPoint} from "./IState";
+import IState, {IPoint} from "./IState";
 import {TILE_SIZE} from "../consts";
 import Direction from "./Direction";
 import {SpellCasterComponentKey} from "../components/SpellCasterComponent";
@@ -10,8 +10,9 @@ import {SpellComponentKey} from "../components/SpellComponent";
 import {EnemyComponentKey} from "../components/EnemyComponent";
 import {SpellableComponentKey} from "../components/SpellableComponent";
 import {PositionComponentKey} from "../components/PositionComponent";
-import {posAndSizeToBoundingBox} from "../utils/stateUtils";
 import {ObstacleComponentKey} from "../components/ObstacleComponent";
+import {findCellToTransform, isBBsOverlaps, posAndSizeToBoundingBox, positionToCell} from "../utils/mathUtils";
+import {EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
 
 /**
  * modify state only here
@@ -41,6 +42,15 @@ export function onGameTick(ctrl: Controller, state: IState) {
 		if (spellCaster && spellCaster.state.castSpell) {
 			spellCaster.onCreateSpell(object)
 			spellCaster.state.castSpell = false
+		}
+
+		const earthTransformer = object.as(EarthTransformerComponentKey)
+		if(earthTransformer) {
+			const centerCell = positionToCell(object.require(PositionComponentKey).state.pos)
+			const cellToTransform = findCellToTransform(centerCell, earthTransformer.state.earthType, state.earthCells)
+			if(cellToTransform) {
+				state.earthCells[cellToTransform.j][cellToTransform.i].type = earthTransformer.state.earthType
+			}
 		}
 	})
 
@@ -107,7 +117,7 @@ export function hasCollisionsWithObstacles(object: GameObject, targetPos: IPoint
 	for (let i = 0; i < objects.length; i++) {
 		if (object !== objects[i] && objects[i].has(ObstacleComponentKey)) {
 			const obj2PosComp = objects[i].require(PositionComponentKey)
-			if (hasCollisionInBB(targetBB, obj2PosComp.state.boundingBox)) {
+			if (isBBsOverlaps(targetBB, obj2PosComp.state.boundingBox)) {
 				return true
 			}
 		}
@@ -138,18 +148,6 @@ function adjustCoord(val: number): number {
 function hasCollisionInObjects(obj1: GameObject, obj2: GameObject): boolean {
 	const pos1 = obj1.require(PositionComponentKey)
 	const pos2 = obj2.require(PositionComponentKey)
-	return hasCollisionInBB(pos1.state.boundingBox, pos2.state.boundingBox)
+	return isBBsOverlaps(pos1.state.boundingBox, pos2.state.boundingBox)
 }
 
-function hasCollisionInBB(bb1: IBoundingBox, bb2: IBoundingBox): boolean {
-	if (bb1.left > bb2.right
-		|| bb1.right < bb2.left
-		|| bb1.top > bb2.bottom
-		|| bb1.bottom < bb2.top) {
-		// no collision
-		return false
-	}
-
-	// collision detected
-	return true
-}

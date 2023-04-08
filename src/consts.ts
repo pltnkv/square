@@ -20,6 +20,10 @@ export const SPELL_SPEED = 40
 export const BAT_SPEED = 10
  */
 
+
+export const APP_WIDTH = 1200
+export const APP_HEIGHT = 920
+
 export const TILE_SIZE = 90
 export const GAME_TICK_DURATION_IN_MS = 30
 export const TIME_BETWEEN_MOVES = 50
@@ -31,7 +35,7 @@ export const MAX_BAT_STEPS_IN_LINE = 30
 
 export const PLAYER_SPEED = 10
 export const SPELL_SPEED = 20
-export const BAT_SPEED = 10
+export const BAT_SPEED = 4
 
 export const DEBUG_SIZES = false
 export const DEBUG_STATE = false

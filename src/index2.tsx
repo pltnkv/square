@@ -1,4 +1,4 @@
-import { render, Text } from '@inlet/react-pixi'
+// import { render, Text } from '@inlet/react-pixi'
 // import { Application } from 'pixi.js'
 
 // Setup PIXI app

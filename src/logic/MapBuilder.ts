@@ -1,6 +1,7 @@
 import Controller from "./Controller";
-import {MapBat, MapPlayer1, MapPlayer2, MapTree, MapWater} from "../map";
+import {MapBat, MapPlayer1, MapPlayer2, MapTree, MapVolcano, MapWater} from "../map";
 import {ISize} from "./IState";
+import EarthType from "./EarthType";
 
 export function buildMap(map: string[][], ctrl: Controller): ISize {
 	for (let j = 0; j < map.length; j++) {
@@ -8,6 +9,9 @@ export function buildMap(map: string[][], ctrl: Controller): ISize {
 		for (let i = 0; i < mapRow.length; i++) {
 			const cellValue = mapRow[i]
 			const cell = {i, j}
+
+			ctrl.objectFactory.setEarthType(cell, EarthType.Regular)
+
 			switch (cellValue) {
 				case MapPlayer1:
 					ctrl.objectFactory.createPlayer(cell, 0, 0x2ec4b6)
@@ -23,6 +27,10 @@ export function buildMap(map: string[][], ctrl: Controller): ISize {
 					break
 				case MapWater:
 					ctrl.objectFactory.createWater(cell)
+					break
+				case MapVolcano:
+					ctrl.objectFactory.createVolcano(cell)
+					ctrl.objectFactory.setEarthType(cell, EarthType.Lava)
 					break
 				default:
 					// create nothing

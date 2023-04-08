@@ -2,9 +2,9 @@ import * as PIXI from 'pixi.js'
 import {DEBUG_SIZES} from 'consts'
 import BaseVisual from 'visuals/BaseVisual'
 import {addDebugView} from "../../utils/debugUtils";
-import {applyPositionAndRotation} from "../../utils/moveUtils";
 import {GameObject} from "../../logic/GameObject";
 import {PositionComponentKey} from "../../components/PositionComponent";
+import {applyPositionAndRotation} from "../../utils/stateUtils";
 
 export default class BaseObjectVisual extends BaseVisual {
 

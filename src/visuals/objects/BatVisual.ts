@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js'
 import BaseObjectVisual from "./BaseObjectVisual"
-import {applyPositionAndRotation} from "../../utils/moveUtils";
 import {GameObject} from "../../logic/GameObject";
+import {applyPositionAndRotation} from "../../utils/stateUtils";
 
 export default class BatVisual extends BaseObjectVisual {
 

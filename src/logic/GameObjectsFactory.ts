@@ -1,13 +1,26 @@
 import IState, {ICell} from 'logic/IState'
 import Direction from 'logic/Direction'
-import {MAX_BAT_STEPS_IN_LINE, MAX_PLAYER_HP, PLAYER_SPEED, SPELL_LIFESPAN, SPELL_SPEED, TILE_SIZE} from 'consts'
+import {
+	BAT_SPEED,
+	MAX_PLAYER_HP,
+	PLAYER_SPEED,
+	SPELL_LIFESPAN,
+	SPELL_SPEED,
+	TILE_SIZE
+} from 'consts'
 import BaseVisual from 'visuals/BaseVisual'
 import {adjustPositionAfterTurn, hasCollisionsWithObstacles} from "./GameLoopLogic"
 import SpellVisual from "../visuals/objects/SpellVisual"
-import {getRandomDirection, posAndSizeToBoundingBox} from "../utils/stateUtils"
 import PlayerVisual from "../visuals/objects/PlayerVisual"
 import BatVisual from "../visuals/objects/BatVisual"
-import {addVectors, cellToPosition, directionToVector} from "../utils/mathUtils"
+import {
+	addVectors,
+	cellToPosition,
+	directionToVector, findPath,
+	getBBFromPoint, getDirectionByCell,
+	getRandomDirection,
+	isBBsOverlaps, isEqual, isPointInsideBB, positionToCell
+} from "../utils/mathUtils"
 import TreeVisual from "../visuals/objects/TreeVisual"
 import WaterVisual from "../visuals/objects/WaterVisual"
 import {GameObject} from "./GameObject";
@@ -23,6 +36,9 @@ import {HPComponent, HPComponentKey} from "../components/HPComponent";
 import {ObstacleComponent, ObstacleComponentKey} from "../components/ObstacleComponent";
 import {EnemyComponent, EnemyComponentKey} from "../components/EnemyComponent";
 import {SpellableComponent, SpellableComponentKey} from "../components/SpellableComponent";
+import {EarthTransformerComponent, EarthTransformerComponentKey} from "../components/EarthTransformerComponent";
+import EarthType from "./EarthType";
+import VolcanoVisual from "../visuals/objects/VolcanoVisual";
 
 export default class GameObjectsFactory {
 
@@ -33,6 +49,13 @@ export default class GameObjectsFactory {
 		const object = new GameObject()
 		this.state.objects.push(object)
 		return object
+	}
+
+	setEarthType(cell: ICell, type:EarthType) {
+		if(!this.state.earthCells[cell.i]) {
+			this.state.earthCells[cell.i] = []
+		}
+		this.state.earthCells[cell.i][cell.j] = {type}
 	}
 
 	createPlayer(cell: ICell, id: number, tintColor: number) {
@@ -101,31 +124,50 @@ export default class GameObjectsFactory {
 	createBat(cell: ICell) {
 		const object = this.createObject()
 		object.addComponent(BatComponentKey, new BatComponent({
-			plannedStepInDirection: 0,
+			needToMove: false,
 		}))
 
-		object.addComponent(PositionComponentKey, new PositionComponent({
-			pos: cellToPosition(cell),
-			direction: Direction.Down,
-			size: {width: TILE_SIZE * 0.8, height: TILE_SIZE * 0.8},
-		}))
+		this.addPositionComponent(object, cell)
 
 		object.addComponent(MovableComponentKey, new MovableComponent(undefined
 			, (object) => {
 				const batComp = object.require(BatComponentKey)
-				const positionComp = object.require(PositionComponentKey)
-				if (batComp.state.plannedStepInDirection > 0) {
-					// do move
-					batComp.state.plannedStepInDirection--
+				batComp.state.needToMove = false
+				const batPositionComp = object.require(PositionComponentKey)
+				const batScanningAreaSize = TILE_SIZE * 6
+				const batScanningArea = getBBFromPoint(batPositionComp.state.pos, batScanningAreaSize, batScanningAreaSize)
+				const playerInAttackArea = this.state.players.find(p => {
+					return isPointInsideBB(p.require(PositionComponentKey).state.pos, batScanningArea)
+				})
 
-					// todo
-					// const speed = getSpeedByDirection(bat.direction, BAT_SPEED)
-					// addVectorPointWithMutation(bat.pos, speed)
-				} else {
-					//change direction
-					positionComp.setDirection(getRandomDirection())
-					// bat.plannedStepInDirection = Math.round(Math.random() * MAX_BAT_STEPS_IN_LINE)
-					batComp.state.plannedStepInDirection = MAX_BAT_STEPS_IN_LINE
+				if (playerInAttackArea) {
+					batComp.state.needToMove = true
+					const batPos = batPositionComp.state.pos
+					const batCell = positionToCell(batPos)
+					if (isEqual(batCell, batComp.state.lastProcessedCell)) {
+						// skip processing
+					} else {
+						const playerPos = playerInAttackArea.require(PositionComponentKey).state.pos
+						const playerCell = positionToCell(playerPos)
+						const path = findPath(batCell, playerCell)
+						if (path.length > 0) {
+							const nextCell = path[0]
+							const direction = getDirectionByCell(batCell, nextCell)
+							batPositionComp.setDirection(direction)
+							batComp.state.lastProcessedCell = batCell
+						}
+					}
+				}
+
+				if (batComp.state.needToMove) {
+					const speed = directionToVector(batPositionComp.state.direction, BAT_SPEED)
+					const newPos = addVectors(batPositionComp.state.pos, speed, false)
+					const collided = hasCollisionsWithObstacles(object, newPos, this.ctrl.state.objects)
+					if (!collided) {
+						batPositionComp.setPos(newPos)
+					} else {
+						batComp.state.lastProcessedCell = undefined
+					}
 				}
 			}))
 
@@ -198,11 +240,7 @@ export default class GameObjectsFactory {
 	createTree(cell: ICell) {
 		const object = this.createObject()
 
-		object.addComponent(PositionComponentKey, new PositionComponent({
-			direction: Direction.Down,
-			pos: cellToPosition(cell),
-			size: {width: TILE_SIZE * 0.9, height: TILE_SIZE * 0.9},
-		}))
+		this.addPositionComponent(object, cell)
 
 		object.addComponent(ObstacleComponentKey, new ObstacleComponent({cell}))
 
@@ -211,21 +249,42 @@ export default class GameObjectsFactory {
 		this.addVisual(object, TreeVisual)
 	}
 
+	createVolcano(cell: ICell) {
+		const object = this.createObject()
+
+		object.addComponent(EarthTransformerComponentKey, new EarthTransformerComponent({
+			earthType: EarthType.Lava,
+		}))
+
+		this.addPositionComponent(object, cell)
+
+		object.addComponent(ObstacleComponentKey, new ObstacleComponent({cell}))
+
+		object.addComponent(SpellableComponentKey, new SpellableComponent())
+
+		this.addVisual(object, VolcanoVisual)
+	}
+
+
 	createWater(cell: ICell) {
 		const object = this.createObject()
 
-		object.addComponent(PositionComponentKey, new PositionComponent({
-			direction: Direction.Down,
-			pos: cellToPosition(cell),
-			size: {width: TILE_SIZE * 0.9, height: TILE_SIZE * 0.9},
-		}))
+		this.addPositionComponent(object, cell, 1)
 
 		object.addComponent(ObstacleComponentKey, new ObstacleComponent({cell}))
 
 		this.addVisual(object, WaterVisual)
 	}
 
-	private addVisual<T extends BaseVisual>(object: GameObject, visualClass: new (state: any) => T) {
+	private addPositionComponent(object:GameObject, cell:ICell, sizeScale:number = 0.8):void {
+		object.addComponent(PositionComponentKey, new PositionComponent({
+			direction: Direction.Down,
+			pos: cellToPosition(cell),
+			size: {width: TILE_SIZE * sizeScale, height: TILE_SIZE * sizeScale},
+		}))
+	}
+
+	private addVisual<T extends BaseVisual>(object: GameObject, visualClass: new (state: any) => T): void {
 		const visual = new visualClass(object)
 		//todo по хорошему рендер система тоже должна бегать по обхектам с визуалами
 		// т.Е. массив this.visuals мы можем грохнуть

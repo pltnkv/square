@@ -1,5 +1,4 @@
 import Controller from 'logic/Controller'
-import SpellCharge from 'logic/SpellCharge'
 import Direction from 'logic/Direction'
 
 const pressedKeys = new Set<string>()
