@@ -80,7 +80,7 @@ export default class Controller {
 		const positionComp = playerObject.require(PositionComponentKey)
 		const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos)
 		const sceneSize = 900
-		const offsetForMovingBox = 200
+		const offsetForMovingBox = 300
 		const playersScreenBox: IBoundingBox = {
 			top: offsetForMovingBox,
 			left: offsetForMovingBox,

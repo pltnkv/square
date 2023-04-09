@@ -35,6 +35,7 @@ export class TreeObject extends GameObject {
 			() => {
 				//todo how to run different animation depending on spell type
 				this.ctrl.effects.showFire(this.require(PositionComponentKey).state.pos)
+				this.ctrl.effects.showObjectHP(this)
 			},
 			() => {
 				this.destroyObject()

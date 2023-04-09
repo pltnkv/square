@@ -13,7 +13,13 @@
 - by pressing F apply spell on sell (F is building)
 
 ---- landshaft ----
-- add vulcano
-- change landshaft on vulcano (depending on distance)
-- make vulano destroyable by 5 shorts
+
+- make vulano destroyable by 5 WATER shorts
 - show HP under objects and player after hit ()
+
+
+
+---- DONE
+
+[+] add vulcano
+[+] change landshaft on vulcano (depending on distance)

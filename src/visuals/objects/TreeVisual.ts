@@ -16,9 +16,7 @@ export default class TreeVisual extends BaseObjectVisual {
 		tree.scale.set(0.45)
 
 		this.view.addChild(tree)
-	}
 
-	update(turnTimePercent: number) {
-		applyPosition(this.view, this.object)
+		this.createHPBarVisual(-30)
 	}
 }

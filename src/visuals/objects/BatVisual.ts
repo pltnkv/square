@@ -21,10 +21,8 @@ export default class BatVisual extends BaseObjectVisual {
 		bat.gotoAndPlay(0)
 
 		this.view.addChild(bat)
-	}
 
-	update(turnTimePercent: number) {
-		applyPositionAndRotation(this.view, this.object)
+		this.createHPBarVisual(-30)
 	}
 }
 

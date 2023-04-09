@@ -16,9 +16,7 @@ export default class VolcanoVisual extends BaseObjectVisual {
 		tree.scale.set(0.2)
 
 		this.view.addChild(tree)
-	}
 
-	update(turnTimePercent: number) {
-		applyPosition(this.view, this.object)
+		// this.view.addChild(this.createHPBarVisual())
 	}
 }

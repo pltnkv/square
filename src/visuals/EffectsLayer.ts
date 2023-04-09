@@ -1,6 +1,10 @@
 import * as PIXI from 'pixi.js'
 import {IPoint} from 'logic/IState'
 import BaseVisual from 'visuals/BaseVisual'
+import {GameObject} from "../logic/GameObject";
+import {HPComponentKey} from "../components/HPComponent";
+import {VisualComponentKey} from "../components/VisualComponent";
+import BaseObjectVisual from "./objects/BaseObjectVisual";
 
 export default class EffectsLayer extends BaseVisual {
 
@@ -27,6 +31,11 @@ export default class EffectsLayer extends BaseVisual {
 		}
 		this.view.addChild(explosion)
 		// bat.tint = 0xff0000
+	}
+
+	showObjectHP(object:GameObject):void {
+		const visual = object.require(VisualComponentKey).state.visual as BaseObjectVisual
+		visual.showHPBar()
 	}
 
 	showFire(pos: IPoint) {

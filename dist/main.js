@@ -17,83 +17,21 @@ var Direction_Direction;
 })(Direction_Direction || (Direction_Direction = {}));
 /* harmony default export */ const logic_Direction = (Direction_Direction);
 
-// CONCATENATED MODULE: ./src/UserInput.ts
-
-const pressedKeys = new Set();
-function init(ctrl) {
-    window.addEventListener('keydown', e => {
-        checkInputs(ctrl);
-        pressedKeys.add(e.key);
-    });
-    window.addEventListener('keyup', e => {
-        pressedKeys.delete(e.key);
-    });
-}
-function checkInputs(ctrl) {
-    Array.from(pressedKeys.values()).reverse().forEach((key) => {
-        switch (key) {
-            //player 0
-            case 'ArrowUp':
-                ctrl.onPlayerMove(0, logic_Direction.Up);
-                break;
-            case 'ArrowLeft':
-                ctrl.onPlayerMove(0, logic_Direction.Left);
-                break;
-            case 'ArrowDown':
-                ctrl.onPlayerMove(0, logic_Direction.Down);
-                break;
-            case 'ArrowRight':
-                ctrl.onPlayerMove(0, logic_Direction.Right);
-                break;
-            case 'Shift':
-                ctrl.onPlayerSpell(0);
-                break;
-            //player 1
-            case 'w':
-                ctrl.onPlayerMove(1, logic_Direction.Up);
-                break;
-            case 'a':
-                ctrl.onPlayerMove(1, logic_Direction.Left);
-                break;
-            case 's':
-                ctrl.onPlayerMove(1, logic_Direction.Down);
-                break;
-            case 'd':
-                ctrl.onPlayerMove(1, logic_Direction.Right);
-                break;
-            case ' ':
-                ctrl.onPlayerSpell(1);
-                break;
-        }
-    });
-}
-
-// CONCATENATED MODULE: ./src/Scene.ts
-
-class Scene {
-    constructor(app, state) {
-        this.state = state;
-        this.stage = app.stage;
-        this.cameraLayer = new pixi_es/* Container */.W2();
-        app.stage.addChild(this.cameraLayer);
-        this.bottomLayer = new pixi_es/* Container */.W2();
-        // this.bottomLayer.y = 40
-        this.cameraLayer.addChild(this.bottomLayer);
-        this.objectsLayer = new pixi_es/* Container */.W2();
-        // this.objectsLayer.y = 40
-        this.cameraLayer.addChild(this.objectsLayer);
-        this.effectsLayer = new pixi_es/* Container */.W2();
-        // this.effectsLayer.y = 40
-        this.cameraLayer.addChild(this.effectsLayer);
-        // container.x = app.screen.width / 2
-        // container.y = app.screen.height / 2
-        // container.pivot.x = container.width / 2
-        // container.pivot.y = container.height / 2
+// CONCATENATED MODULE: ./src/components/BaseComponent.ts
+const defaultDependencies = [];
+class BaseComponent {
+    constructor() {
+        this.dependencies = defaultDependencies;
     }
-    updateCamera() {
-        this.cameraLayer.x = this.state.canvasPositionX;
-        this.cameraLayer.y = this.state.canvasPositionY;
-        this.cameraLayer.scale.set(this.state.canvasScale);
+}
+
+// CONCATENATED MODULE: ./src/components/PlayerComponent.ts
+
+const PlayerComponentKey = 'Player';
+class PlayerComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
     }
 }
 
@@ -129,232 +67,12 @@ const MAX_SPELL_CHARGES = 2;
 const MAX_PLAYER_HP = 3;
 const SPELL_LIFESPAN = 100;
 const MAX_BAT_STEPS_IN_LINE = 30;
-// export const PLAYER_SPEED = 30
-const PLAYER_SPEED = 10;
+const PLAYER_SPEED = 30;
+// export const PLAYER_SPEED = 10
 const SPELL_SPEED = 20;
 const BAT_SPEED = 4;
 const DEBUG_SIZES = false;
 const DEBUG_STATE = true;
-
-// CONCATENATED MODULE: ./src/visuals/BaseVisual.ts
-class BaseVisual {
-    shouldUpdate() {
-        return true;
-    }
-    getView() {
-        throw new Error('Visual::getView not implemented');
-    }
-    update(turnTimePercent) {
-        throw new Error('Visual::update mot implemented');
-    }
-}
-
-// CONCATENATED MODULE: ./src/logic/EarthType.ts
-var EarthType;
-(function (EarthType) {
-    EarthType["Regular"] = "Regular";
-    EarthType["Lava"] = "Lava";
-    EarthType["Forest"] = "Forest";
-    EarthType["Magic"] = "Magic";
-})(EarthType || (EarthType = {}));
-/* harmony default export */ const logic_EarthType = (EarthType);
-
-// CONCATENATED MODULE: ./src/visuals/GameFieldLayer.ts
-
-
-
-
-class GameFieldLayer extends BaseVisual {
-    constructor(state) {
-        super();
-        this.earthSprites = [];
-        this.tilesType = {};
-        this.state = state;
-        this.view = new pixi_es/* Graphics */.TC();
-        this.tilesType = {
-            [logic_EarthType.Regular]: pixi_es/* Texture.from */.xE.from('assets/bg_regular.png'),
-            [logic_EarthType.Lava]: pixi_es/* Texture.from */.xE.from('assets/bg_lava.jpg'),
-            [logic_EarthType.Forest]: pixi_es/* Texture.from */.xE.from('assets/bg_forest.png'),
-        };
-        for (let j = 0; j < this.state.earthCells.length; j++) {
-            this.earthSprites[j] = [];
-            const row = this.state.earthCells[j];
-            for (let i = 0; i < row.length; i++) {
-                const tile = new pixi_es/* Sprite */.jy();
-                tile.alpha = 0.5;
-                tile.x = i * consts_TILE_SIZE;
-                tile.y = j * consts_TILE_SIZE;
-                this.earthSprites[j][i] = tile;
-                this.view.addChild(tile);
-                // borders
-                this.view.beginFill(0xffffff);
-                this.view.lineStyle(1, 0x011627, 0.2);
-                this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
-                this.view.endFill();
-            }
-        }
-    }
-    update() {
-        for (let j = 0; j < this.state.earthCells.length; j++) {
-            const row = this.state.earthCells[j];
-            for (let i = 0; i < row.length; i++) {
-                const earthType = row[i].type;
-                this.earthSprites[j][i].texture = this.tilesType[earthType];
-            }
-        }
-    }
-    getView() {
-        return this.view;
-    }
-}
-
-// CONCATENATED MODULE: ./src/visuals/EffectsLayer.ts
-
-
-class EffectsLayer extends BaseVisual {
-    constructor() {
-        super(...arguments);
-        this.view = new pixi_es/* Container */.W2();
-    }
-    showExplosion(pos) {
-        const textures = [];
-        for (let i = 0; i < 32; i++) {
-            const id = String('00' + i).slice(-3);
-            textures.push(pixi_es/* Texture.from */.xE.from(`assets/explosion/tile${id}.png`));
-        }
-        const explosion = new pixi_es/* AnimatedSprite */.Kg(textures);
-        explosion.animationSpeed = 0.2;
-        explosion.rotation = Math.PI * 2 * Math.random();
-        explosion.x = pos.x;
-        explosion.y = pos.y;
-        explosion.anchor.set(0.5);
-        // bat.scale.set(0.75 + Math.random() * 0.5)
-        explosion.gotoAndPlay(0);
-        explosion.loop = false;
-        explosion.onComplete = () => {
-            this.view.removeChild(explosion);
-        };
-        this.view.addChild(explosion);
-        // bat.tint = 0xff0000
-    }
-    showFire(pos) {
-        const textures = [];
-        for (let i = 1; i < 9; i++) {
-            textures.push(pixi_es/* Texture.from */.xE.from(`assets/fire/fire_${i}.png`));
-        }
-        const explosion = new pixi_es/* AnimatedSprite */.Kg(textures);
-        explosion.animationSpeed = 0.2;
-        explosion.x = pos.x;
-        explosion.y = pos.y;
-        explosion.anchor.set(0.5);
-        explosion.scale.set(0.3);
-        explosion.gotoAndPlay(0);
-        explosion.loop = false;
-        explosion.onComplete = () => {
-            this.view.removeChild(explosion);
-        };
-        this.view.addChild(explosion);
-    }
-    getView() {
-        return this.view;
-    }
-    // effectExplosion(i:number, j:number) {
-    // 	const explosion = new PIXI.AnimatedSprite(explosionTextures);
-    // 	explosion.gotoAndStop()
-    // }
-    update() {
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/BaseComponent.ts
-const defaultDependencies = [];
-class BaseComponent {
-    constructor() {
-        this.dependencies = defaultDependencies;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/SpellCasterComponent.ts
-
-const SpellCasterComponentKey = 'SpellCaster';
-class SpellCasterComponent extends BaseComponent {
-    constructor(state, onCreateSpell) {
-        super();
-        this.state = state;
-        this.onCreateSpell = onCreateSpell;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/MovableComponent.ts
-
-const MovableComponentKey = 'Movable';
-class MovableComponent extends BaseComponent {
-    constructor(state, onMove) {
-        super();
-        this.state = state;
-        this.onMove = onMove;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/HPComponent.ts
-
-const HPComponentKey = 'HP';
-class HPComponent extends BaseComponent {
-    constructor(state, onDamaged, onDestroyed) {
-        super();
-        this.state = state;
-        this.onDamaged = onDamaged;
-        this.onDestroyed = onDestroyed;
-    }
-    reduceHP(amount = 1) {
-        if (amount <= 0) {
-            throw new Error('amount must be > 0');
-        }
-        if (this.state.hp > 0) {
-            this.state.hp -= amount;
-            if (this.state.hp <= 0) {
-                this.onDamaged();
-                this.onDestroyed();
-            }
-            else {
-                this.onDamaged();
-            }
-        }
-    }
-    kill() {
-        if (this.state.hp > 0) {
-            this.state.hp = 0;
-            this.onDamaged();
-            this.onDestroyed();
-        }
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/SpellComponent.ts
-
-const SpellComponentKey = 'Spell';
-class SpellComponent extends BaseComponent {
-    constructor(state) {
-        super();
-        this.state = state;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/EnemyComponent.ts
-
-const EnemyComponentKey = 'Enemy';
-class EnemyComponent extends BaseComponent {
-    constructor(state) {
-        super();
-        this.state = state;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/SpellableComponent.ts
-
-const SpellableComponentKey = 'Spellable';
-class SpellableComponent extends BaseComponent {
-}
 
 // CONCATENATED MODULE: ./src/utils/mathUtils.ts
 
@@ -577,7 +295,7 @@ function calcDistanceBetweenCells(from, to) {
 // CONCATENATED MODULE: ./src/components/PositionComponent.ts
 
 
-const PositionComponentKey = 'Position';
+const PositionComponent_PositionComponentKey = 'Position';
 class PositionComponent extends BaseComponent {
     constructor(state) {
         super();
@@ -597,6 +315,353 @@ class PositionComponent extends BaseComponent {
         const s = this.state;
         s.boundingBox = posAndSizeToBoundingBox(this.state.pos, this.state.size);
     }
+}
+
+// CONCATENATED MODULE: ./src/utils/stateUtils.ts
+
+
+
+
+////////////////////////////////////////////
+// There is no function that change state
+////////////////////////////////////////////
+function applyPosition(view, object) {
+    const comp = object.require(PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
+}
+function applyPositionAndRotation(view, object) {
+    const comp = object.require(PositionComponent_PositionComponentKey);
+    view.x = comp.state.pos.x;
+    view.y = comp.state.pos.y;
+    view.rotation = directionToRad(comp.state.direction);
+}
+function findEmptySell() {
+    //TODO убедиться что в этой точке нет игроков
+    return {
+        x: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
+        y: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
+    };
+}
+function getPlayer(state, playerId) {
+    return state.players.find(p => {
+        const playerComp = p.require(PlayerComponentKey);
+        return playerComp.state.id === playerId;
+    });
+}
+
+// CONCATENATED MODULE: ./src/components/VisualComponent.ts
+
+const VisualComponentKey = 'Visual';
+class VisualComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/UserInput.ts
+
+
+
+const pressedKeys = new Set();
+function init(ctrl) {
+    window.addEventListener('keydown', e => {
+        checkInputs(ctrl);
+        pressedKeys.add(e.key);
+        const playerVisual = getPlayer(ctrl.state, 1).require(VisualComponentKey).state.visual;
+        playerVisual.startMoveAnimation();
+    });
+    window.addEventListener('keyup', e => {
+        pressedKeys.delete(e.key);
+        const playerVisual = getPlayer(ctrl.state, 1).require(VisualComponentKey).state.visual;
+        playerVisual.stopMoveAnimation();
+    });
+}
+function checkInputs(ctrl) {
+    Array.from(pressedKeys.values()).reverse().forEach((key) => {
+        switch (key) {
+            //player 0
+            case 'ArrowUp':
+                ctrl.onPlayerMove(0, logic_Direction.Up);
+                break;
+            case 'ArrowLeft':
+                ctrl.onPlayerMove(0, logic_Direction.Left);
+                break;
+            case 'ArrowDown':
+                ctrl.onPlayerMove(0, logic_Direction.Down);
+                break;
+            case 'ArrowRight':
+                ctrl.onPlayerMove(0, logic_Direction.Right);
+                break;
+            case 'Shift':
+                ctrl.onPlayerSpell(0);
+                break;
+            //player 1
+            case 'w':
+                ctrl.onPlayerMove(1, logic_Direction.Up);
+                break;
+            case 'a':
+                ctrl.onPlayerMove(1, logic_Direction.Left);
+                break;
+            case 's':
+                ctrl.onPlayerMove(1, logic_Direction.Down);
+                break;
+            case 'd':
+                ctrl.onPlayerMove(1, logic_Direction.Right);
+                break;
+            case ' ':
+                ctrl.onPlayerSpell(1);
+                break;
+        }
+    });
+}
+
+// CONCATENATED MODULE: ./src/Scene.ts
+
+class Scene {
+    constructor(app, state) {
+        this.state = state;
+        this.stage = app.stage;
+        this.cameraLayer = new pixi_es/* Container */.W2();
+        app.stage.addChild(this.cameraLayer);
+        this.bottomLayer = new pixi_es/* Container */.W2();
+        // this.bottomLayer.y = 40
+        this.cameraLayer.addChild(this.bottomLayer);
+        this.objectsLayer = new pixi_es/* Container */.W2();
+        // this.objectsLayer.y = 40
+        this.cameraLayer.addChild(this.objectsLayer);
+        this.effectsLayer = new pixi_es/* Container */.W2();
+        // this.effectsLayer.y = 40
+        this.cameraLayer.addChild(this.effectsLayer);
+        // container.x = app.screen.width / 2
+        // container.y = app.screen.height / 2
+        // container.pivot.x = container.width / 2
+        // container.pivot.y = container.height / 2
+    }
+    updateCamera() {
+        this.cameraLayer.x = this.state.canvasPositionX;
+        this.cameraLayer.y = this.state.canvasPositionY;
+        this.cameraLayer.scale.set(this.state.canvasScale);
+    }
+}
+
+// CONCATENATED MODULE: ./src/visuals/BaseVisual.ts
+class BaseVisual {
+    shouldUpdate() {
+        return true;
+    }
+    getView() {
+        throw new Error('Visual::getView not implemented');
+    }
+    update(turnTimePercent) {
+        throw new Error('Visual::update mot implemented');
+    }
+}
+
+// CONCATENATED MODULE: ./src/logic/EarthType.ts
+var EarthType;
+(function (EarthType) {
+    EarthType["Regular"] = "Regular";
+    EarthType["Lava"] = "Lava";
+    EarthType["Forest"] = "Forest";
+    EarthType["Magic"] = "Magic";
+})(EarthType || (EarthType = {}));
+/* harmony default export */ const logic_EarthType = (EarthType);
+
+// CONCATENATED MODULE: ./src/visuals/GameFieldLayer.ts
+
+
+
+
+class GameFieldLayer extends BaseVisual {
+    constructor(state) {
+        super();
+        this.earthSprites = [];
+        this.tilesType = {};
+        this.state = state;
+        this.view = new pixi_es/* Graphics */.TC();
+        this.tilesType = {
+            [logic_EarthType.Regular]: pixi_es/* Texture.from */.xE.from('assets/bg_regular.png'),
+            [logic_EarthType.Lava]: pixi_es/* Texture.from */.xE.from('assets/bg_lava.jpg'),
+            [logic_EarthType.Forest]: pixi_es/* Texture.from */.xE.from('assets/bg_forest.png'),
+        };
+        for (let j = 0; j < this.state.earthCells.length; j++) {
+            this.earthSprites[j] = [];
+            const row = this.state.earthCells[j];
+            for (let i = 0; i < row.length; i++) {
+                const tile = new pixi_es/* Sprite */.jy();
+                tile.alpha = 0.5;
+                tile.x = i * consts_TILE_SIZE;
+                tile.y = j * consts_TILE_SIZE;
+                this.earthSprites[j][i] = tile;
+                this.view.addChild(tile);
+                // borders
+                this.view.beginFill(0xffffff);
+                this.view.lineStyle(1, 0x011627, 0.2);
+                this.view.drawRect(i * consts_TILE_SIZE, j * consts_TILE_SIZE, consts_TILE_SIZE, consts_TILE_SIZE);
+                this.view.endFill();
+            }
+        }
+    }
+    update() {
+        for (let j = 0; j < this.state.earthCells.length; j++) {
+            const row = this.state.earthCells[j];
+            for (let i = 0; i < row.length; i++) {
+                const earthType = row[i].type;
+                this.earthSprites[j][i].texture = this.tilesType[earthType];
+            }
+        }
+    }
+    getView() {
+        return this.view;
+    }
+}
+
+// CONCATENATED MODULE: ./src/visuals/EffectsLayer.ts
+
+
+
+class EffectsLayer extends BaseVisual {
+    constructor() {
+        super(...arguments);
+        this.view = new pixi_es/* Container */.W2();
+    }
+    showExplosion(pos) {
+        const textures = [];
+        for (let i = 0; i < 32; i++) {
+            const id = String('00' + i).slice(-3);
+            textures.push(pixi_es/* Texture.from */.xE.from(`assets/explosion/tile${id}.png`));
+        }
+        const explosion = new pixi_es/* AnimatedSprite */.Kg(textures);
+        explosion.animationSpeed = 0.2;
+        explosion.rotation = Math.PI * 2 * Math.random();
+        explosion.x = pos.x;
+        explosion.y = pos.y;
+        explosion.anchor.set(0.5);
+        // bat.scale.set(0.75 + Math.random() * 0.5)
+        explosion.gotoAndPlay(0);
+        explosion.loop = false;
+        explosion.onComplete = () => {
+            this.view.removeChild(explosion);
+        };
+        this.view.addChild(explosion);
+        // bat.tint = 0xff0000
+    }
+    showObjectHP(object) {
+        const visual = object.require(VisualComponentKey).state.visual;
+        visual.showHPBar();
+    }
+    showFire(pos) {
+        const textures = [];
+        for (let i = 1; i < 9; i++) {
+            textures.push(pixi_es/* Texture.from */.xE.from(`assets/fire/fire_${i}.png`));
+        }
+        const explosion = new pixi_es/* AnimatedSprite */.Kg(textures);
+        explosion.animationSpeed = 0.2;
+        explosion.x = pos.x;
+        explosion.y = pos.y;
+        explosion.anchor.set(0.5);
+        explosion.scale.set(0.3);
+        explosion.gotoAndPlay(0);
+        explosion.loop = false;
+        explosion.onComplete = () => {
+            this.view.removeChild(explosion);
+        };
+        this.view.addChild(explosion);
+    }
+    getView() {
+        return this.view;
+    }
+    // effectExplosion(i:number, j:number) {
+    // 	const explosion = new PIXI.AnimatedSprite(explosionTextures);
+    // 	explosion.gotoAndStop()
+    // }
+    update() {
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/SpellCasterComponent.ts
+
+const SpellCasterComponentKey = 'SpellCaster';
+class SpellCasterComponent extends BaseComponent {
+    constructor(state, onCreateSpell) {
+        super();
+        this.state = state;
+        this.onCreateSpell = onCreateSpell;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/MovableComponent.ts
+
+const MovableComponentKey = 'Movable';
+class MovableComponent extends BaseComponent {
+    constructor(state, onMove) {
+        super();
+        this.state = state;
+        this.onMove = onMove;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/HPComponent.ts
+
+const HPComponentKey = 'HP';
+class HPComponent extends BaseComponent {
+    constructor(state, onDamaged, onDestroyed) {
+        super();
+        this.onDamaged = onDamaged;
+        this.onDestroyed = onDestroyed;
+        this.state = state;
+        this.state.hpMax = state.hp;
+    }
+    reduceHP(amount = 1) {
+        if (amount <= 0) {
+            throw new Error('amount must be > 0');
+        }
+        if (this.state.hp > 0) {
+            this.state.hp -= amount;
+            if (this.state.hp <= 0) {
+                this.onDamaged();
+                this.onDestroyed();
+            }
+            else {
+                this.onDamaged();
+            }
+        }
+    }
+    kill() {
+        if (this.state.hp > 0) {
+            this.state.hp = 0;
+            this.onDamaged();
+            this.onDestroyed();
+        }
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/SpellComponent.ts
+
+const SpellComponentKey = 'Spell';
+class SpellComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/EnemyComponent.ts
+
+const EnemyComponentKey = 'Enemy';
+class EnemyComponent extends BaseComponent {
+    constructor(state) {
+        super();
+        this.state = state;
+    }
+}
+
+// CONCATENATED MODULE: ./src/components/SpellableComponent.ts
+
+const SpellableComponentKey = 'Spellable';
+class SpellableComponent extends BaseComponent {
 }
 
 // CONCATENATED MODULE: ./src/components/ObstacleComponent.ts
@@ -628,7 +693,7 @@ class DestroyableByEarthComponent extends BaseComponent {
     constructor(state) {
         super();
         this.state = state;
-        this.dependencies = [HPComponentKey, PositionComponentKey];
+        this.dependencies = [HPComponentKey, PositionComponent_PositionComponentKey];
     }
 }
 
@@ -677,7 +742,7 @@ function onGameTick(ctrl, state) {
         const destroyableByEarthComponent = object.as(DestroyableByEarthComponentKey);
         if (destroyableByEarthComponent) {
             // todo может мне добавить кеш на основные функции поика? и сбрасывать его в конце каждого тика?
-            const cell = positionToCell(object.require(PositionComponentKey).state.pos);
+            const cell = positionToCell(object.require(PositionComponent_PositionComponentKey).state.pos);
             const earthType = (_a = getEarthByCell(state.earthCells, cell)) === null || _a === void 0 ? void 0 : _a.type;
             if (earthType) {
                 if (!destroyableByEarthComponent.state.allowedEarthTypes.includes(earthType)) {
@@ -688,7 +753,7 @@ function onGameTick(ctrl, state) {
         // transform earth
         const earthTransformer = object.as(EarthTransformerComponentKey);
         if (earthTransformer) {
-            const centerCell = positionToCell(object.require(PositionComponentKey).state.pos);
+            const centerCell = positionToCell(object.require(PositionComponent_PositionComponentKey).state.pos);
             iterateEarthCellsFromCenter(state.earthCells, centerCell, earthTransformer.state.impactDistance, (cell) => {
                 const distance = GameLoopLogic_calcDistanceBetweenCells(centerCell, cell) || 1; // prevent division by zero
                 const impact = earthTransformer.state.impactDistance / distance;
@@ -765,11 +830,11 @@ function tryReduceHP(object) {
     }
 }
 function hasCollisionsWithObstacles(object, targetPos, objects) {
-    const posComp = object.require(PositionComponentKey);
+    const posComp = object.require(PositionComponent_PositionComponentKey);
     const targetBB = posAndSizeToBoundingBox(targetPos, posComp.state.size);
     for (let i = 0; i < objects.length; i++) {
         if (object !== objects[i] && objects[i].has(ObstacleComponentKey)) {
-            const obj2PosComp = objects[i].require(PositionComponentKey);
+            const obj2PosComp = objects[i].require(PositionComponent_PositionComponentKey);
             if (isBBsOverlaps(targetBB, obj2PosComp.state.boundingBox)) {
                 return true;
             }
@@ -796,8 +861,8 @@ function adjustCoord(val) {
     }
 }
 function hasCollisionInObjects(obj1, obj2) {
-    const pos1 = obj1.require(PositionComponentKey);
-    const pos2 = obj2.require(PositionComponentKey);
+    const pos1 = obj1.require(PositionComponent_PositionComponentKey);
+    const pos2 = obj2.require(PositionComponent_PositionComponentKey);
     return isBBsOverlaps(pos1.state.boundingBox, pos2.state.boundingBox);
 }
 function iterateAllEarthCells(earthCells, callback) {
@@ -830,49 +895,6 @@ function GameLoopLogic_calcDistanceBetweenCells(c1, c2) {
 }
 function getEarthByCell(earthCells, cell) {
     return earthCells[cell.j] && earthCells[cell.j][cell.i];
-}
-
-// CONCATENATED MODULE: ./src/components/PlayerComponent.ts
-
-const PlayerComponentKey = 'Player';
-class PlayerComponent extends BaseComponent {
-    constructor(state) {
-        super();
-        this.state = state;
-    }
-}
-
-// CONCATENATED MODULE: ./src/utils/stateUtils.ts
-
-
-
-
-////////////////////////////////////////////
-// There is no function that change state
-////////////////////////////////////////////
-function applyPosition(view, object) {
-    const comp = object.require(PositionComponentKey);
-    view.x = comp.state.pos.x;
-    view.y = comp.state.pos.y;
-}
-function applyPositionAndRotation(view, object) {
-    const comp = object.require(PositionComponentKey);
-    view.x = comp.state.pos.x;
-    view.y = comp.state.pos.y;
-    view.rotation = directionToRad(comp.state.direction);
-}
-function findEmptySell() {
-    //TODO убедиться что в этой точке нет игроков
-    return {
-        x: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
-        y: Math.ceil(Math.random() * 5) * TILE_SIZE - TILE_SIZE / 2,
-    };
-}
-function getPlayer(state, playerId) {
-    return state.players.find(p => {
-        const playerComp = p.require(PlayerComponentKey);
-        return playerComp.state.id === playerId;
-    });
 }
 
 // CONCATENATED MODULE: ./src/map.ts
@@ -984,13 +1006,16 @@ function addDebugView(view, comp) {
 
 
 
+
 class BaseObjectVisual extends BaseVisual {
     constructor(object) {
         super();
         this.view = new pixi_es/* Container */.W2();
+        this.hpBarVisibility = false;
+        this.hpBarVisibilityTimeout = 0;
         this.object = object;
         if (DEBUG_SIZES) {
-            const comp = object.as(PositionComponentKey);
+            const comp = object.as(PositionComponent_PositionComponentKey);
             if (comp) {
                 addDebugView(this.view, comp);
             }
@@ -1001,11 +1026,35 @@ class BaseObjectVisual extends BaseVisual {
     }
     update(turnTimePercent) {
         applyPositionAndRotation(this.view, this.object);
+        if (this.hpBarVisual && this.hpBarVisibility) {
+            const { hp, hpMax } = this.object.require(HPComponentKey).state;
+            const MAX_LEN = 50;
+            this.hpBarVisual.clear();
+            this.hpBarVisual.beginFill(0xFF5757);
+            this.hpBarVisual.lineStyle(2, 0x1E1E1E);
+            this.hpBarVisual.drawRect(-MAX_LEN / 2, 0, MAX_LEN, 10);
+            this.hpBarVisual.endFill();
+            this.hpBarVisual.beginFill(0x42FF23);
+            this.hpBarVisual.drawRect(-MAX_LEN / 2, 0, hp / hpMax * MAX_LEN, 10);
+            this.hpBarVisual.endFill();
+        }
+    }
+    showHPBar() {
+        this.hpBarVisibility = true;
+        clearTimeout(this.hpBarVisibilityTimeout);
+        this.view.addChild(this.hpBarVisual);
+        this.hpBarVisibilityTimeout = window.setTimeout(() => {
+            this.view.removeChild(this.hpBarVisual);
+            this.hpBarVisibility = false;
+        }, 2000);
+    }
+    createHPBarVisual(yOffset) {
+        this.hpBarVisual = new pixi_es/* Graphics */.TC();
+        this.hpBarVisual.y = yOffset;
     }
 }
 
 // CONCATENATED MODULE: ./src/visuals/objects/TreeVisual.ts
-
 
 
 class TreeVisual extends BaseObjectVisual {
@@ -1018,9 +1067,7 @@ class TreeVisual extends BaseObjectVisual {
         tree.y = 0;
         tree.scale.set(0.45);
         this.view.addChild(tree);
-    }
-    update(turnTimePercent) {
-        applyPosition(this.view, this.object);
+        this.createHPBarVisual(-30);
     }
 }
 
@@ -1028,16 +1075,6 @@ class TreeVisual extends BaseObjectVisual {
 
 const BatComponentKey = 'bat';
 class BatComponent extends BaseComponent {
-    constructor(state) {
-        super();
-        this.state = state;
-    }
-}
-
-// CONCATENATED MODULE: ./src/components/VisualComponent.ts
-
-const VisualComponentKey = 'Visual';
-class VisualComponent extends BaseComponent {
     constructor(state) {
         super();
         this.state = state;
@@ -1086,7 +1123,7 @@ class GameObject {
     //// HELPERS
     ////////////////////////////////////////////////
     addPositionComponent(cell, sizeScale = 0.8) {
-        this.addComponent(PositionComponentKey, new PositionComponent({
+        this.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
             direction: logic_Direction.Down,
             pos: cellToPosition(cell),
             size: { width: consts_TILE_SIZE * sizeScale, height: consts_TILE_SIZE * sizeScale },
@@ -1148,7 +1185,8 @@ class TreeObject extends GameObject {
             hp: 3,
         }, () => {
             //todo how to run different animation depending on spell type
-            this.ctrl.effects.showFire(this.require(PositionComponentKey).state.pos);
+            this.ctrl.effects.showFire(this.require(PositionComponent_PositionComponentKey).state.pos);
+            this.ctrl.effects.showObjectHP(this);
         }, () => {
             this.destroyObject();
         }));
@@ -1157,7 +1195,6 @@ class TreeObject extends GameObject {
 }
 
 // CONCATENATED MODULE: ./src/visuals/objects/VolcanoVisual.ts
-
 
 
 class VolcanoVisual extends BaseObjectVisual {
@@ -1170,9 +1207,7 @@ class VolcanoVisual extends BaseObjectVisual {
         tree.y = -5;
         tree.scale.set(0.2);
         this.view.addChild(tree);
-    }
-    update(turnTimePercent) {
-        applyPosition(this.view, this.object);
+        // this.view.addChild(this.createHPBarVisual())
     }
 }
 
@@ -1201,7 +1236,6 @@ class VolcanoObject extends GameObject {
 
 
 
-
 class WaterVisual extends BaseObjectVisual {
     constructor(object) {
         super(object);
@@ -1210,9 +1244,6 @@ class WaterVisual extends BaseObjectVisual {
         g.drawRect(-consts_TILE_SIZE / 2, -consts_TILE_SIZE / 2, consts_TILE_SIZE, consts_TILE_SIZE);
         g.endFill();
         this.view.addChild(g);
-    }
-    update(turnTimePercent) {
-        applyPosition(this.view, this.object);
     }
 }
 
@@ -1235,13 +1266,18 @@ class WaterObject extends GameObject {
 
 
 
-
 class PlayerVisual extends BaseObjectVisual {
     constructor(object) {
         super(object);
+        this.moveAnimation = false;
+        this.firstMoveTexture = false;
+        this.timeFromLastUpdate = 0;
         const comp = object.require(PlayerComponentKey);
-        const texture = pixi_es/* Texture.from */.xE.from('assets/bunny.png');
-        const bunny = new pixi_es/* Sprite */.jy(texture);
+        this.texture = pixi_es/* Texture.from */.xE.from('assets/bunny.png');
+        this.textureMove1 = pixi_es/* Texture.from */.xE.from('assets/bunny_move-1.png');
+        this.textureMove2 = pixi_es/* Texture.from */.xE.from('assets/bunny_move-2.png');
+        const bunny = new pixi_es/* Sprite */.jy(this.texture);
+        this.bunny = bunny;
         bunny.anchor.set(0.5);
         bunny.scale.set(1.4);
         bunny.x = 0;
@@ -1258,11 +1294,29 @@ class PlayerVisual extends BaseObjectVisual {
         // this.text.x = -20
         // bunny.addChild(this.text)
         this.view.addChild(bunny);
+        this.createHPBarVisual(-30);
+    }
+    startMoveAnimation() {
+        this.moveAnimation = true;
+    }
+    stopMoveAnimation() {
+        this.moveAnimation = false;
     }
     update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.object);
-        const comp = this.object.require(HPComponentKey);
-        this.view.alpha = comp.state.hp / MAX_PLAYER_HP;
+        super.update(turnTimePercent);
+        const hpComp = this.object.require(HPComponentKey);
+        this.view.alpha = hpComp.state.hp / MAX_PLAYER_HP;
+        const currentTime = Date.now();
+        if (this.moveAnimation) {
+            if (currentTime - this.timeFromLastUpdate > 80) {
+                this.bunny.texture = this.firstMoveTexture ? this.textureMove1 : this.textureMove2;
+                this.firstMoveTexture = !this.firstMoveTexture;
+                this.timeFromLastUpdate = currentTime;
+            }
+        }
+        else {
+            this.bunny.texture = this.texture;
+        }
     }
 }
 
@@ -1288,7 +1342,7 @@ class PlayerObject extends GameObject {
             lastAssignedMoveTime: 0,
             lastSpellTime: 0,
         }));
-        this.addComponent(PositionComponentKey, new PositionComponent({
+        this.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
             direction: logic_Direction.Down,
             size: { width: consts_TILE_SIZE * 0.6, height: consts_TILE_SIZE * 0.8 },
             pos: cellToPosition(cell),
@@ -1296,7 +1350,7 @@ class PlayerObject extends GameObject {
         this.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
             var _a;
             const playerComp = object.require(PlayerComponentKey);
-            const positionComp = object.require(PositionComponentKey);
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
             if (playerComp.state.moveAction) {
                 if (playerComp.state.moveAction.type === 'move') {
                     const speed = directionToVector(positionComp.state.direction, PLAYER_SPEED);
@@ -1320,13 +1374,14 @@ class PlayerObject extends GameObject {
             hp: MAX_PLAYER_HP,
         }, () => {
             //todo
+            this.ctrl.effects.showObjectHP(this);
         }, () => {
             //todo
         }));
         this.addComponent(SpellCasterComponentKey, new SpellCasterComponent({
             castSpell: false
         }, (object) => {
-            this.ctrl.objectFactory.createSpell(object.require(PositionComponentKey));
+            this.ctrl.objectFactory.createSpell(object.require(PositionComponent_PositionComponentKey));
         }));
         this.addComponent(SpellableComponentKey, new SpellableComponent());
         this.addVisual(PlayerVisual);
@@ -1334,7 +1389,6 @@ class PlayerObject extends GameObject {
 }
 
 // CONCATENATED MODULE: ./src/visuals/objects/BatVisual.ts
-
 
 
 class BatVisual extends BaseObjectVisual {
@@ -1351,9 +1405,7 @@ class BatVisual extends BaseObjectVisual {
         bat.tint = 0xff0000;
         bat.gotoAndPlay(0);
         this.view.addChild(bat);
-    }
-    update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.object);
+        this.createHPBarVisual(-30);
     }
 }
 //WTF?
@@ -1380,11 +1432,11 @@ class BatObject extends GameObject {
         this.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
             const batComp = object.require(BatComponentKey);
             batComp.state.needToMove = false;
-            const batPositionComp = object.require(PositionComponentKey);
+            const batPositionComp = object.require(PositionComponent_PositionComponentKey);
             const batScanningAreaSize = consts_TILE_SIZE * 6;
             const batScanningArea = getBBFromPoint(batPositionComp.state.pos, batScanningAreaSize, batScanningAreaSize);
             const playerInAttackArea = this.ctrl.state.players.find(p => {
-                return isPointInsideBB(p.require(PositionComponentKey).state.pos, batScanningArea);
+                return isPointInsideBB(p.require(PositionComponent_PositionComponentKey).state.pos, batScanningArea);
             });
             if (playerInAttackArea) {
                 batComp.state.needToMove = true;
@@ -1394,7 +1446,7 @@ class BatObject extends GameObject {
                     // skip processing
                 }
                 else {
-                    const playerPos = playerInAttackArea.require(PositionComponentKey).state.pos;
+                    const playerPos = playerInAttackArea.require(PositionComponent_PositionComponentKey).state.pos;
                     const playerCell = positionToCell(playerPos);
                     const path = findPath(batCell, playerCell);
                     if (path.length > 0) {
@@ -1421,6 +1473,7 @@ class BatObject extends GameObject {
             hp: 1,
         }, () => {
             //todo
+            this.ctrl.effects.showObjectHP(this);
         }, () => {
             this.destroyObject();
         }));
@@ -1436,20 +1489,16 @@ class BatObject extends GameObject {
 
 
 
-
 class SpellVisual extends BaseObjectVisual {
     constructor(object) {
         super(object);
-        const positionComponent = this.object.require(PositionComponentKey);
+        const positionComponent = this.object.require(PositionComponent_PositionComponentKey);
         const g = new pixi_es/* Graphics */.TC();
         g.alpha = 0.6;
         g.beginFill(0xe71d36);
         g.drawCircle(0, 0, positionComponent.state.size.width / 2);
         g.endFill();
         this.view.addChild(g);
-    }
-    update(turnTimePercent) {
-        applyPositionAndRotation(this.view, this.object);
     }
 }
 
@@ -1470,13 +1519,13 @@ class SpellObject extends GameObject {
             leftMoves: SPELL_LIFESPAN
         }));
         const shift = directionToVector(spellCasterPosition.state.direction, consts_TILE_SIZE * 0.6);
-        this.addComponent(PositionComponentKey, new PositionComponent({
+        this.addComponent(PositionComponent_PositionComponentKey, new PositionComponent({
             pos: addVectors(Object.assign({}, spellCasterPosition.state.pos), shift),
             size: { width: consts_TILE_SIZE / 3, height: consts_TILE_SIZE / 3 },
             direction: spellCasterPosition.state.direction,
         }));
         this.addComponent(MovableComponentKey, new MovableComponent(undefined, (object) => {
-            const positionComp = object.require(PositionComponentKey);
+            const positionComp = object.require(PositionComponent_PositionComponentKey);
             const spellComp = object.require(SpellComponentKey);
             if (spellComp.state.leftMoves > 0) {
                 spellComp.state.leftMoves--;
@@ -1492,8 +1541,7 @@ class SpellObject extends GameObject {
         this.addComponent(HPComponentKey, new HPComponent({
             hp: 1,
         }, () => { }, () => {
-            const positionComp = this.require(PositionComponentKey);
-            this.ctrl.effects.showExplosion(positionComp.state.pos);
+            this.ctrl.effects.showExplosion(this.require(PositionComponent_PositionComponentKey).state.pos);
             this.destroyObject();
         }));
         this.addComponent(SpellableComponentKey, new SpellableComponent());
@@ -1606,10 +1654,10 @@ class Controller {
     }
     onCameraUpdate() {
         const playerObject = getPlayer(this.state, 1);
-        const positionComp = playerObject.require(PositionComponentKey);
+        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
         const playerPosScreen = this.getCanvasToScreenPoint(positionComp.state.pos);
         const sceneSize = 900;
-        const offsetForMovingBox = 200;
+        const offsetForMovingBox = 300;
         const playersScreenBox = {
             top: offsetForMovingBox,
             left: offsetForMovingBox,
@@ -1644,7 +1692,7 @@ class Controller {
     updateZoom() {
         this.state.canvasScaleInv = 1 / this.state.canvasScale;
         const playerObject = getPlayer(this.state, 1);
-        const playerPosComp = playerObject.require(PositionComponentKey);
+        const playerPosComp = playerObject.require(PositionComponent_PositionComponentKey);
         this.state.canvasPositionX = -playerPosComp.state.pos.x * this.state.canvasScale + APP_WIDTH / 2;
         this.state.canvasPositionY = -playerPosComp.state.pos.y * this.state.canvasScale + APP_HEIGHT / 2;
     }
@@ -1654,7 +1702,7 @@ class Controller {
     onPlayerMove(playerId, direction) {
         const playerObject = getPlayer(this.state, playerId);
         const playerComp = playerObject.require(PlayerComponentKey);
-        const positionComp = playerObject.require(PositionComponentKey);
+        const positionComp = playerObject.require(PositionComponent_PositionComponentKey);
         const currentTime = Date.now();
         if (currentTime - playerComp.state.lastAssignedMoveTime < TIME_BETWEEN_MOVES) {
             return;
@@ -1688,7 +1736,7 @@ class Controller {
     // ##########################################
     getObjectsByPoint(point) {
         return this.state.objects.filter(obj => {
-            const positionComp = obj.as(PositionComponentKey);
+            const positionComp = obj.as(PositionComponent_PositionComponentKey);
             if (positionComp) {
                 return isPointInsideBB(point, positionComp.state.boundingBox);
             }

@@ -19,8 +19,4 @@ export default class SpellVisual extends BaseObjectVisual {
 
 		this.view.addChild(g)
 	}
-
-	update(turnTimePercent: number) {
-		applyPositionAndRotation(this.view, this.object)
-	}
 }

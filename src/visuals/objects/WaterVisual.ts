@@ -15,8 +15,4 @@ export default class WaterVisual extends BaseObjectVisual {
 		g.endFill()
 		this.view.addChild(g)
 	}
-
-	update(turnTimePercent: number) {
-		applyPosition(this.view, this.object)
-	}
 }

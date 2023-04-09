@@ -1,5 +1,8 @@
 import Controller from 'logic/Controller'
 import Direction from 'logic/Direction'
+import {getPlayer} from "./utils/stateUtils";
+import {VisualComponent, VisualComponentKey} from "./components/VisualComponent";
+import PlayerVisual from "./visuals/objects/PlayerVisual";
 
 const pressedKeys = new Set<string>()
 
@@ -7,9 +10,13 @@ export function init(ctrl: Controller) {
 	window.addEventListener('keydown', e => {
 		checkInputs(ctrl)
 		pressedKeys.add(e.key)
+		const playerVisual = getPlayer(ctrl.state, 1).require(VisualComponentKey).state.visual as PlayerVisual
+		playerVisual.startMoveAnimation()
 	})
 	window.addEventListener('keyup', e => {
 		pressedKeys.delete(e.key)
+		const playerVisual = getPlayer(ctrl.state, 1).require(VisualComponentKey).state.visual as PlayerVisual
+		playerVisual.stopMoveAnimation()
 	})
 }
 

@@ -2,6 +2,7 @@ import {IBoundingBox, IPoint, ISize} from "../logic/IState";
 import {BaseComponent} from "./BaseComponent";
 import Direction from "../logic/Direction";
 import {posAndSizeToBoundingBox} from "../utils/mathUtils";
+import {RemoveReadonly} from "../utils/types";
 
 export type IPositionComponentState = {
 	readonly direction: Direction
@@ -20,17 +21,17 @@ export class PositionComponent extends BaseComponent<IPositionComponentState> {
 	}
 
 	setPos(value:IPoint) {
-		const s:Mutable<IPositionComponentState> = this.state
+		const s:RemoveReadonly<IPositionComponentState> = this.state
 		s.pos = value
 		this.calcBoundingBox()
 	}
 	setDirection(value:Direction) {
-		const s:Mutable<IPositionComponentState> = this.state
+		const s:RemoveReadonly<IPositionComponentState> = this.state
 		s.direction = value
 	}
 
 	calcBoundingBox() {
-		const s:Mutable<IPositionComponentState> = this.state
+		const s:RemoveReadonly<IPositionComponentState> = this.state
 		s.boundingBox = posAndSizeToBoundingBox(this.state.pos, this.state.size)
 	}
 }

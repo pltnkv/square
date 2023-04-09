@@ -63,6 +63,7 @@ export class PlayerObject extends GameObject {
 			},
 			() => {
 				//todo
+				this.ctrl.effects.showObjectHP(this)
 			},
 			() => {
 				//todo

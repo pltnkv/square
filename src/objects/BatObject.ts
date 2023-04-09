@@ -82,6 +82,7 @@ export class BatObject extends GameObject {
 			},
 			() => {
 				//todo
+				this.ctrl.effects.showObjectHP(this)
 			},
 			() => {
 				this.destroyObject()

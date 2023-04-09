@@ -45,8 +45,7 @@ export class SpellObject extends GameObject {
 			},
 			() => {},
 			() => {
-				const positionComp = this.require(PositionComponentKey)
-				this.ctrl.effects.showExplosion(positionComp.state.pos)
+				this.ctrl.effects.showExplosion(this.require(PositionComponentKey).state.pos)
 				this.destroyObject()
 			}
 		))

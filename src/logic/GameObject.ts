@@ -17,7 +17,6 @@ import {cellToPosition} from "../utils/mathUtils";
 import {TILE_SIZE} from "../consts";
 import BaseVisual from "../visuals/BaseVisual";
 import Controller from "./Controller";
-import {BaseComponent} from "../components/BaseComponent";
 
 type ComponentByKey = {
 	[BatComponentKey]: BatComponent
@@ -68,7 +67,6 @@ export class GameObject {
 	////////////////////////////////////////////////
 	//// HELPERS
 	////////////////////////////////////////////////
-
 
 	protected addPositionComponent(cell: ICell, sizeScale: number = 0.8): void {
 		this.addComponent(PositionComponentKey, new PositionComponent({

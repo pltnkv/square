@@ -1,17 +1,20 @@
 import {BaseComponent} from "./BaseComponent";
 
 export type IHPComponentState = {
-	readonly hp: number
+	hpMax: number
+	hp: number
 }
 
 export const HPComponentKey = 'HP'
 
 export class HPComponent extends BaseComponent<IHPComponentState> {
 
-	constructor(public state: IHPComponentState,
+	constructor(state: Pick<IHPComponentState, 'hp'>,
 				public onDamaged: () => void,
 				public onDestroyed: () => void) {
-		super()
+		super();
+		this.state = state as IHPComponentState
+		(this.state.hpMax as number) = state.hp
 	}
 
 	reduceHP(amount: number = 1) {
